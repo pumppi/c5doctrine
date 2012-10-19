@@ -1,0 +1,12 @@
+{
+	"require": {
+		"doctrine/orm": "2.3.0",
+		"symfony/validator": "v2.1.2"
+	},
+	"autoload": {
+		"psr-0": {
+			"Collapick": "src/"
+		}
+		
+	}
+}
