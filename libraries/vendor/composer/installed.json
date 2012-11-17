@@ -1,5 +1,63 @@
 [
     {
+        "name": "symfony/validator",
+        "version": "v2.1.2",
+        "version_normalized": "2.1.2.0",
+        "target-dir": "Symfony/Component/Validator",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/Validator",
+            "reference": "v2.1.2"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://github.com/symfony/Validator/zipball/v2.1.2",
+            "reference": "v2.1.2",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.3"
+        },
+        "require-dev": {
+            "symfony/http-foundation": "2.1.*",
+            "symfony/locale": "2.1.*",
+            "symfony/yaml": "2.1.*"
+        },
+        "suggest": {
+            "doctrine/common": ">=2.1,<2.4-dev",
+            "symfony/http-foundation": "2.1.*",
+            "symfony/yaml": "2.1.*"
+        },
+        "time": "2012-09-17 10:45:59",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.1-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Symfony\\Component\\Validator": ""
+            }
+        },
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "http://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony Validator Component",
+        "homepage": "http://symfony.com"
+    },
+    {
         "name": "doctrine/common",
         "version": "2.3.0",
         "version_normalized": "2.3.0.0",
@@ -71,24 +129,24 @@
     },
     {
         "name": "symfony/console",
-        "version": "v2.1.2",
-        "version_normalized": "2.1.2.0",
+        "version": "v2.1.3",
+        "version_normalized": "2.1.3.0",
         "target-dir": "Symfony/Component/Console",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/Console",
-            "reference": "v2.1.0-RC2"
+            "reference": "v2.1.3"
         },
         "dist": {
             "type": "zip",
-            "url": "https://github.com/symfony/Console/zipball/v2.1.0-RC2",
-            "reference": "v2.1.0-RC2",
+            "url": "https://github.com/symfony/Console/zipball/v2.1.3",
+            "reference": "v2.1.3",
             "shasum": ""
         },
         "require": {
             "php": ">=5.3.3"
         },
-        "time": "2012-08-22 06:48:41",
+        "time": "2012-10-22 07:37:12",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -253,45 +311,39 @@
         ]
     },
     {
-        "name": "symfony/validator",
-        "version": "v2.1.2",
-        "version_normalized": "2.1.2.0",
-        "target-dir": "Symfony/Component/Validator",
+        "name": "gedmo/doctrine-extensions",
+        "version": "v2.3.1",
+        "version_normalized": "2.3.1.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/symfony/Validator",
-            "reference": "v2.1.2"
+            "url": "git://github.com/l3pp4rd/DoctrineExtensions.git",
+            "reference": "v2.3.1"
         },
         "dist": {
             "type": "zip",
-            "url": "https://github.com/symfony/Validator/zipball/v2.1.2",
-            "reference": "v2.1.2",
+            "url": "https://github.com/l3pp4rd/DoctrineExtensions/archive/v2.3.1.zip",
+            "reference": "v2.3.1",
             "shasum": ""
         },
         "require": {
-            "php": ">=5.3.3"
-        },
-        "require-dev": {
-            "symfony/http-foundation": "2.1.*",
-            "symfony/locale": "2.1.*",
-            "symfony/yaml": "2.1.*"
+            "php": ">=5.3.2",
+            "doctrine/common": ">=2.1,<2.4-dev"
         },
         "suggest": {
-            "doctrine/common": ">=2.1,<2.4-dev",
-            "symfony/http-foundation": "2.1.*",
-            "symfony/yaml": "2.1.*"
+            "doctrine/orm": ">=2.1",
+            "doctrine/mongodb-odm": "*"
         },
-        "time": "2012-09-17 10:45:59",
+        "time": "2012-07-05 13:53:16",
         "type": "library",
         "extra": {
             "branch-alias": {
-                "dev-master": "2.1-dev"
+                "dev-master": "2.3.x-dev"
             }
         },
-        "installation-source": "dist",
+        "installation-source": "source",
         "autoload": {
             "psr-0": {
-                "Symfony\\Component\\Validator": ""
+                "Gedmo": "lib/"
             }
         },
         "license": [
@@ -299,15 +351,24 @@
         ],
         "authors": [
             {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com"
-            },
-            {
-                "name": "Symfony Community",
-                "homepage": "http://symfony.com/contributors"
+                "name": "Gediminas Morkevicius",
+                "email": "gediminas.morkevicius@gmail.com"
             }
         ],
-        "description": "Symfony Validator Component",
-        "homepage": "http://symfony.com"
+        "description": "Doctrine2 behavioral extensions",
+        "homepage": "http://gediminasm.org/",
+        "keywords": [
+            "tree",
+            "behaviors",
+            "doctrine2",
+            "extensions",
+            "gedmo",
+            "sluggable",
+            "loggable",
+            "translatable",
+            "nestedset",
+            "sortable",
+            "timestampable"
+        ]
     }
 ]

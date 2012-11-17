@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'Symfony\\Component\\Validator' => $vendorDir . '/symfony/validator/',
     'Symfony\\Component\\Console' => $vendorDir . '/symfony/console/',
+    'Gedmo' => $vendorDir . '/gedmo/doctrine-extensions/lib/',
     'Doctrine\\ORM' => $vendorDir . '/doctrine/orm/lib/',
     'Doctrine\\DBAL' => $vendorDir . '/doctrine/dbal/lib/',
     'Doctrine\\Common' => $vendorDir . '/doctrine/common/lib/',

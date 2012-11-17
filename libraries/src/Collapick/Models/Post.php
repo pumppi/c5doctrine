@@ -1,6 +1,7 @@
 <?php
 namespace Collapick\Models;
 	
+use Gedmo\Mapping\Annotation as Gedmo;
 use Doctrine\ORM\Mapping AS ORM;
 use Symfony\Component\Validator\Constraints AS Assert;
 
@@ -34,6 +35,20 @@ class Post {
     protected $body;
 	
 	
+	/**
+	 * @Gedmo\Timestampable(on="create")
+     * @ORM\Column(type="datetime")
+	 */
+	private $created;
+
+	/**
+	 * @Gedmo\Timestampable(on="update")
+	 * @ORM\Column(type="datetime")
+	 */
+	private $updated;
+	
+	
+	
 	
 	public function getId() {
 		return $this->id;
@@ -58,5 +73,27 @@ class Post {
 	public function setBody($body) {
 		$this->body = $body;
 	}
+	
+	/**
+	 * 
+	 * @return DateTime
+	 */
+	public function getCreated() {
+		return $this->created;
+	}
+
+	public function setCreated($created) {
+		$this->created = $created;
+	}
+
+	public function getUpdated() {
+		return $this->updated;
+	}
+
+	public function setUpdated($updated) {
+		$this->updated = $updated;
+	}
+
+
 	
 }

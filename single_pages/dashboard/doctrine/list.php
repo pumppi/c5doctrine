@@ -6,7 +6,7 @@
 					<div style="display: none" id="ccm-page-navigate-pages-content">
 					</div>
 					<ul class="ccm-pane-header-icons">
-					
+
 					</ul>
 
 					<h3><?php echo t('Posts') ?></h3>
@@ -20,24 +20,26 @@
 				</div>
 
 				<div class="ccm-pane-body">
-<table cellspacing="0" cellpadding="0" border="0" class="ccm-results-list" >
-	<tbody>
-		<tr>
-			<th><?php echo t('Title') ?></th>
-			<th><?php echo t('Body') ?></th>
-		</tr>
-		<?php foreach($posts as $obj): ?>
-		<tr>
-			<td>
-				<?php echo $obj->getTitle() ?>
-			</td>
-			<td>
-				<?php echo $obj->getBody() ?>
-			</td>
-		</tr>
-		<?php endforeach; ?>
-	</tbody>
-</table>
+					<table cellspacing="0" cellpadding="0" border="0" class="ccm-results-list" >
+						<tbody>
+							<tr>
+								<th><?php echo t('Title') ?></th>
+								<th><?php echo t('Body') ?></th>
+								<th><?php echo t('Created at') ?></th>
+							</tr>
+							<?php foreach ($posts as $obj): ?>
+								<tr>
+									<td>
+										<?php echo $obj->getTitle() ?>
+									</td>
+									<td>
+										<?php echo $obj->getBody() ?>
+									</td>
+									<td><?php echo $obj->getCreated()->format('Y-d-m') ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
 				</div>
 
 

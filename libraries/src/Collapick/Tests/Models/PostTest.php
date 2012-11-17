@@ -17,27 +17,31 @@ class PostTest extends \PHPUnit_Framework_TestCase {
 	protected function tearDown() {
 		
 	}
-	
-	
-	public function testEntityManager(){
-	
+	/**
+	 * 
+	 * @global type $em
+	 * @return \Doctrine\ORM\EntityManager
+	 */
+	protected function getEntityManager(){
 		global $em;
 		/* @var $em \Doctrine\ORM\EntityManager */
-		
-		$this->assertNotNull($em->createQuery());
+		return $em;
+	}
+
+
+
+
+	public function testEntityManager(){
+		$this->assertNotNull($this->getEntityManager()->createQuery());
 	}
 	
 	
 	public function testSave(){
-		
-		
-		global $em;
-		
 		$post = new Post();
-		$post->setBody('Testataan tallentamista');
-		$post->setTitle('jee');
-		$em->persist($post);
-		$em->flush();
+		$post->setBody('Description for post');
+		$post->setTitle('Title for post');
+		$this->getEntityManager()->persist($post);
+		$this->getEntityManager()->flush();
 		
 		$this->assertNotNull($post->getId());
 	}
