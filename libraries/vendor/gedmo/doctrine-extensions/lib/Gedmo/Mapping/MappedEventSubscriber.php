@@ -5,7 +5,6 @@ namespace Gedmo\Mapping;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Cache\ArrayCache;
-use Doctrine\Common\Annotations\Reader;
 use Gedmo\Mapping\ExtensionMetadataFactory;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\Common\Persistence\ObjectManager;
@@ -21,9 +20,6 @@ use Doctrine\Common\EventArgs;
  * extended drivers
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Mapping
- * @subpackage MappedEventSubscriber
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 abstract class MappedEventSubscriber implements EventSubscriber
@@ -48,7 +44,7 @@ abstract class MappedEventSubscriber implements EventSubscriber
      * ExtensionMetadataFactory used to read the extension
      * metadata through the extension drivers
      *
-     * @var Gedmo\Mapping\ExtensionMetadataFactory
+     * @var ExtensionMetadataFactory
      */
     private $extensionMetadataFactory = array();
 
@@ -133,6 +129,12 @@ abstract class MappedEventSubscriber implements EventSubscriber
                         $config = self::$configurations[$this->name][$class];
                     }
                 }
+
+                $objectClass = isset($config['useObjectClass']) ? $config['useObjectClass'] : $class;
+                if ($objectClass !== $class) {
+                    $this->getConfiguration($objectManager, $objectClass);
+                }
+
             }
         }
         return $config;
@@ -142,7 +144,7 @@ abstract class MappedEventSubscriber implements EventSubscriber
      * Get extended metadata mapping reader
      *
      * @param ObjectManager $objectManager
-     * @return Gedmo\Mapping\ExtensionMetadataFactory
+     * @return ExtensionMetadataFactory
      */
     public function getExtensionMetadataFactory(ObjectManager $objectManager)
     {

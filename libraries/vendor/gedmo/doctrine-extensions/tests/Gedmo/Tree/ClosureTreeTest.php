@@ -8,13 +8,14 @@ use Doctrine\Common\Util\Debug;
 use Tree\Fixture\Closure\Category;
 use Tree\Fixture\Closure\News;
 use Tree\Fixture\Closure\CategoryClosure;
+use Tree\Fixture\Closure\CategoryWithoutLevel;
+use Tree\Fixture\Closure\CategoryWithoutLevelClosure;
 
 /**
  * These are tests for Tree behavior
  *
  * @author Gustavo Adrian <comfortablynumb84@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Tree
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -26,13 +27,19 @@ class ClosureTreeTest extends BaseTestCaseORM
     const USER = "Tree\\Fixture\\Closure\\User";
     const PERSON_CLOSURE = "Tree\\Fixture\\Closure\\PersonClosure";
     const NEWS = "Tree\\Fixture\\Closure\\News";
+    const CATEGORY_WITHOUT_LEVEL = "Tree\\Fixture\\Closure\\CategoryWithoutLevel";
+    const CATEGORY_WITHOUT_LEVEL_CLOSURE = "Tree\\Fixture\\Closure\\CategoryWithoutLevelClosure";
+
+    protected $listener;
 
     protected function setUp()
     {
         parent::setUp();
 
+        $this->listener = new TreeListener;
+
         $evm = new EventManager;
-        $evm->addEventSubscriber(new TreeListener);
+        $evm->addEventSubscriber($this->listener);
 
         $this->getMockSqliteEntityManager($evm);
         $this->populate();
@@ -211,6 +218,29 @@ class ClosureTreeTest extends BaseTestCaseORM
         $this->em->flush();
     }
 
+    public function testIfEntityHasNotIncludedTreeLevelFieldThenDontProcessIt()
+    {
+        $listener = $this->getMock('Gedmo\Tree\TreeListener', array('getStrategy'));
+        $strategy = $this->getMock('Gedmo\Tree\Strategy\ORM\Closure', array('setLevelFieldOnPendingNodes'), array($listener));
+        $listener->expects($this->any())
+            ->method('getStrategy')
+            ->will($this->returnValue($strategy));
+
+        $strategy->expects($this->never())
+            ->method('setLevelFieldOnPendingNodes');
+
+        $evm = $this->em->getEventManager();
+
+        $evm->removeEventListener($this->listener->getSubscribedEvents(), $this->listener);
+        $evm->addEventListener($this->listener->getSubscribedEvents(), $this->listener);
+
+        $cat = new CategoryWithoutLevel();
+        $cat->setTitle('Test');
+
+        $this->em->persist($cat);
+        $this->em->flush();
+    }
+
     private function hasAncestor($closures, $name)
     {
         $result = false;
@@ -232,7 +262,9 @@ class ClosureTreeTest extends BaseTestCaseORM
             self::PERSON,
             self::PERSON_CLOSURE,
             self::USER,
-            self::NEWS
+            self::NEWS,
+            self::CATEGORY_WITHOUT_LEVEL,
+            self::CATEGORY_WITHOUT_LEVEL_CLOSURE
         );
     }
 

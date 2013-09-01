@@ -21,9 +21,13 @@ Features:
 
 Thanks for contributions to:
 
-- **[comfortablynumb](http://github.com/comfortablynumb) Gustavo Falco** for Closure strategy
+- **[comfortablynumb](http://github.com/comfortablynumb) Gustavo Falco** for Closure and Materialized Path strategy
 - **[everzet](http://github.com/everzet) Kudryashov Konstantin** for TreeLevel implementation
 - **[stof](http://github.com/stof) Christophe Coevoet** for getTreeLeafs function
+
+Update **2012-06-28**
+
+- Added "buildTree" functionality support for Closure and Materialized Path strategies
 
 Update **2012-02-23**
 
@@ -69,7 +73,7 @@ ported to **Symfony2** by **Christophe Coevoet**, together with all other extens
 This article will cover the basic installation and functionality of **Tree** behavior
 
 Content:
-    
+
 - [Including](#including-extension) the extension
 - Tree [annotations](#annotations)
 - Entity [example](#entity-mapping)
@@ -79,6 +83,8 @@ Content:
 - Build [html tree](#html-tree)
 - Advanced usage [examples](#advanced-examples)
 - [Materialized Path](#materialized-path)
+- [Closure Table](#closure-table)
+- [Repository methods (all strategies)](#repository-methods)
 
 <a name="including-extension"></a>
 
@@ -128,32 +134,32 @@ class Category
      * @ORM\Column(name="lft", type="integer")
      */
     private $lft;
-    
+
     /**
      * @Gedmo\TreeLevel
      * @ORM\Column(name="lvl", type="integer")
      */
     private $lvl;
-    
+
     /**
      * @Gedmo\TreeRight
      * @ORM\Column(name="rgt", type="integer")
      */
     private $rgt;
-    
+
     /**
      * @Gedmo\TreeRoot
      * @ORM\Column(name="root", type="integer", nullable=true)
      */
     private $root;
-    
+
     /**
      * @Gedmo\TreeParent
      * @ORM\ManyToOne(targetEntity="Category", inversedBy="children")
-     * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="SET NULL")
+     * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $parent;
-    
+
     /**
      * @ORM\OneToMany(targetEntity="Category", mappedBy="parent")
      * @ORM\OrderBy({"lft" = "ASC"})
@@ -164,7 +170,7 @@ class Category
     {
         return $this->id;
     }
-    
+
     public function setTitle($title)
     {
         $this->title = $title;
@@ -174,15 +180,15 @@ class Category
     {
         return $this->title;
     }
-    
+
     public function setParent(Category $parent = null)
     {
-        $this->parent = $parent;    
+        $this->parent = $parent;
     }
-    
+
     public function getParent()
     {
-        return $this->parent;   
+        return $this->parent;
     }
 }
 ```
@@ -256,7 +262,7 @@ Entity\Category:
       joinColumn:
         name: parent_id
         referencedColumnName: id
-        onDelete: SET NULL
+        onDelete: CASCADE
       gedmo:
         - treeParent
   oneToMany:
@@ -293,17 +299,23 @@ Entity\Category:
         <field name="right" column="rgt" type="integer">
             <gedmo:tree-right/>
         </field>
-        <field name="root" type="integer">
+        <field name="root" type="integer" nullable="true">
             <gedmo:tree-root/>
         </field>
         <field name="level" column="lvl" type="integer">
             <gedmo:tree-level/>
         </field>
 
-        <many-to-one field="parent" target-entity="NestedTree">
-            <join-column name="parent_id" referenced-column-name="id" on-delete="SET_NULL"/>
+        <many-to-one field="parent" target-entity="NestedTree" inversed-by="children">
+            <join-column name="parent_id" referenced-column-name="id" on-delete="CASCADE"/>
             <gedmo:tree-parent/>
         </many-to-one>
+
+        <one-to-many field="children" target-entity="NestedTree" mapped-by="parent">
+            <order-by>
+                <order-by-field name="lft" direction="ASC" />
+            </order-by>
+        </one-to-many>
 
         <gedmo:tree type="nested"/>
 
@@ -379,7 +391,7 @@ $path = $repo->getPath($carrots);
 $repo->verify();
 // can return TRUE if tree is valid, or array of errors found on tree
 $repo->recover();
-$em->clear(); // clear cached nodes
+$em->flush(); // important: flush recovered nodes
 // if tree has errors it will try to fix all tree nodes
 
 UNSAFE: be sure to backup before runing this method when necessary, if you can use $em->remove($node);
@@ -481,7 +493,7 @@ Tree after moving the Carrots down as last child:
     /Fruits
 ```
 
-**Note:** tree repository functions: **verify, recover, removeFromTree**. 
+**Note:** tree repository functions: **verify, recover, removeFromTree**.
 Will require to clear the cache of Entity Manager because left-right values will differ.
 So after that use **$em->clear();** if you will continue using the nodes after these operations.
 
@@ -492,7 +504,7 @@ So after that use **$em->clear();** if you will continue using the nodes after t
 namespace Entity\Repository;
 
 use Gedmo\Tree\Entity\Repository\NestedTreeRepository;
-    
+
 class CategoryRepository extends NestedTreeRepository
 {
     // your code here
@@ -535,11 +547,11 @@ To load a tree as **ul - li** html tree use:
 $repo = $em->getRepository('Entity\Category');
 $htmlTree = $repo->childrenHierarchy(
     null, /* starting from root nodes */
-    false, /* load all children, not only direct */
-    true, /* render html */
+    false, /* true: load all children, false: only direct */
     array(
         'decorate' => true,
-        'representationField' => 'slug'
+        'representationField' => 'slug',
+        'html' => true
     )
 );
 ```
@@ -551,7 +563,6 @@ $htmlTree = $repo->childrenHierarchy(
 $repo = $em->getRepository('Entity\Category');
 $options = array(
     'decorate' => true,
-    'representationField' => 'slug',
     'rootOpen' => '<ul>',
     'rootClose' => '</ul>',
     'childOpen' => '<li>',
@@ -562,10 +573,10 @@ $options = array(
 );
 $htmlTree = $repo->childrenHierarchy(
     null, /* starting from root nodes */
-    false, /* load all children, not only direct */
-    true, /* render html */
+    false, /* true: load all children, false: only direct */
     $options
 );
+
 ```
 
 ### Generate own node list
@@ -587,7 +598,8 @@ $tree = $repo->buildTree($query->getArrayResult(), $options);
 
 ### Using routes in decorator, show only selected items, return unlimited levels items as 2 levels
 
-```
+``` php
+<?php
 $controller = $this;
         $tree = $root->childrenHierarchy(null,false,array('decorate' => true,
             'rootOpen' => function($tree) {
@@ -669,31 +681,31 @@ class Category
      * @ORM\Column(name="lft", type="integer")
      */
     private $lft;
-    
+
     /**
      * @Gedmo\TreeRight
      * @ORM\Column(name="rgt", type="integer")
      */
     private $rgt;
-    
+
     /**
      * @Gedmo\TreeLevel
      * @ORM\Column(name="lvl", type="integer")
      */
     private $lvl;
-    
+
     /**
      * @Gedmo\TreeParent
      * @ORM\ManyToOne(targetEntity="Category", inversedBy="children")
-     * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="SET NULL")
+     * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $parent;
-    
+
     /**
      * @ORM\OneToMany(targetEntity="Category", mappedBy="parent")
      */
     private $children;
-    
+
     /**
      * @Gedmo\Translatable
      * @Gedmo\Slug
@@ -705,12 +717,12 @@ class Category
     {
         return $this->id;
     }
-    
+
     public function getSlug()
     {
         return $this->slug;
     }
-    
+
     public function setTitle($title)
     {
         $this->title = $title;
@@ -720,15 +732,15 @@ class Category
     {
         return $this->title;
     }
-    
+
     public function setParent(Category $parent)
     {
-        $this->parent = $parent;    
+        $this->parent = $parent;
     }
-    
+
     public function getParent()
     {
-        return $this->parent;   
+        return $this->parent;
     }
 }
 ```
@@ -781,7 +793,7 @@ Entity\Category:
       joinColumn:
         name: parent_id
         referencedColumnName: id
-        onDelete: SET NULL
+        onDelete: CASCADE
       gedmo:
         - treeParent
   oneToMany:
@@ -807,11 +819,15 @@ Easy like that, any suggestions on improvements are very welcome
 modifications on the tree could occur. Look at the MongoDB example of schema definition to see how it must be configured.
 - If your **TreePathSource** field is of type "string", then the primary key will be concatenated in the form: "value-id".
  This is to allow you to use non-unique values as the path source. For example, this could be very useful if you need to
- use the date as the path source (maybe to create a tree of comments and order them by date).
+ use the date as the path source (maybe to create a tree of comments and order them by date). If you want to change this
+ default behaviour you can set the attribute "appendId" of **TreePath** to true or false. By default the path does not start
+ with the given separator but ends with it. You can customize this behaviour with "startsWithSeparator" and "endsWithSeparator".
+ `@Gedmo\TreePath(appendId=false, startsWithSeparator=true, endsWithSeparator=false)`
 - **TreePath** field can only be of types: string, text
 - **TreePathSource** field can only be of types: id, integer, smallint, bigint, string, int, float (I include here all the
 variations of the field types, including the ORM and ODM for MongoDB ones).
 - **TreeLockTime** must be of type "date" (used only in MongoDB for now).
+- **TreePathHash** allows you to define a field that is automatically filled with the md5 hash of the path. This field could be neccessary if you want to set a unique constraint on the database table.
 
 ### ORM Entity example (Annotations)
 
@@ -851,7 +867,7 @@ class Category
      * @Gedmo\TreeParent
      * @ORM\ManyToOne(targetEntity="Category", inversedBy="children")
      * @ORM\JoinColumns({
-     *   @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="SET NULL")
+     *   @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="CASCADE")
      * })
      */
     private $parent;
@@ -1004,6 +1020,63 @@ class Category
 
 ```
 
+### MongoDB example (Yaml)
+```
+YourNamespace\Document\Category:
+    type:               mappedSuperclass
+    repositoryClass:    Gedmo\Tree\Document\MongoDB\Repository\MaterializedPathRepository
+    collection:         categories
+    gedmo:
+        tree:
+            type: materializedPath
+            activateLocking: true
+    fields:
+        id:
+            id:     true
+        title:
+            type:   string
+            gedmo:
+                -   sluggable
+        slug:
+            type:   string
+            gedmo:
+                0:  treePathSource
+                slug:
+                    unique:     false
+                    fields:
+                        - title
+        path:
+            type:   string
+            gedmo:
+                treePath:
+                    separator:           '/'
+                    appendId:            false
+                    startsWithSeparator: false  # default
+                    endsWithSeparator:   true   # default
+        level:
+            type:   int
+            name:   lvl
+            nullable:   true
+            gedmo:
+                -   treeLevel
+        lockTime:
+            type:   date
+            gedmo:
+                -   treeLockTime
+        hash:
+            type:   string
+            gedmo:
+                -   treePathHash
+        parent:
+            reference:  true
+            type:       one
+            inversedBy: children
+            targetDocument: YourNamespace\Document\Category
+            simple:     true
+            gedmo:
+                -   treeParent
+```
+
 ### Path generation
 
 When an entity is inserted, a path is generated using the value of the field configured as the TreePathSource.
@@ -1045,3 +1118,154 @@ it locks the tree and proceed with the modification. After all the modifications
 If, for some reason, the lock couldn't get freed, there's a lock timeout configured with a default time of 3 seconds.
 You can change this value using the **lockingTimeout** parameter under the Tree annotation (or equivalent in XML and YML).
 You must pass a value in seconds to this parameter.
+
+
+<a name="closure-table"></a>
+
+## Closure Table
+
+To be able to use this strategy, you'll need an additional entity which represents the closures. We already provide you an abstract
+entity, so you'd only need to extend it.
+
+### Closure Entity
+
+``` php
+<?php
+
+namespace YourNamespace\Entity;
+
+use Gedmo\Tree\Entity\MappedSuperclass\AbstractClosure;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Entity
+ */
+class CategoryClosure extends AbstractClosure
+{
+}
+```
+
+Next step, define your entity.
+
+### ORM Entity example (Annotations)
+
+``` php
+<?php
+
+namespace YourNamespace\Entity;
+
+use Gedmo\Mapping\Annotation as Gedmo;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @Gedmo\Tree(type="closure")
+ * @Gedmo\TreeClosure(class="YourNamespace\Entity\CategoryClosure")
+ * @ORM\Entity(repositoryClass="Gedmo\Tree\Entity\Repository\ClosureTreeRepository")
+ */
+class Category
+{
+    /**
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue
+     */
+    private $id;
+
+    /**
+     * @ORM\Column(name="title", type="string", length=64)
+     */
+    private $title;
+
+    /**
+     * This parameter is optional for the closure strategy
+     *
+     * @ORM\Column(name="level", type="integer", nullable=true)
+     * @Gedmo\TreeLevel
+     */
+    private $level;
+
+    /**
+     * @Gedmo\TreeParent
+     * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="CASCADE")
+     * @ORM\ManyToOne(targetEntity="Category", inversedBy="children")
+     */
+    private $parent;
+
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function setTitle($title)
+    {
+        $this->title = $title;
+    }
+
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
+    public function setParent(Category $parent = null)
+    {
+        $this->parent = $parent;
+    }
+
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    public function addClosure(CategoryClosure $closure)
+    {
+        $this->closures[] = $closure;
+    }
+
+    public function setLevel($level)
+    {
+        $this->level = $level;
+    }
+
+    public function getLevel()
+    {
+        return $this->level;
+    }
+}
+
+```
+
+And that's it!
+
+
+<a name="repository-methods"></a>
+
+## Repository Methods (All strategies)
+
+There are repository methods that are available for you in all the strategies:
+
+* **getRootNodes** / **getRootNodesQuery** / **getRootNodesQueryBuilder**: Returns an array with the available root nodes. Arguments:
+  - *sortByField*: An optional field to order the root nodes. Defaults to "null".
+  - *direction*: In case the first argument is used, you can pass the direction here: "asc" or "desc". Defaults to "asc".
+* **getChildren** / **getChildrenQuery** / **getChildrenQueryBuilder**: Returns an array of children nodes. Arguments:
+  - *node*: If you pass a node, the method will return its children. Defaults to "null" (this means it will return ALL nodes).
+  - *direct*: If you pass true as a value for this argument, you'll get only the direct children of the node
+  (or only the root nodes if you pass "null" to the "node" argument).
+  - *sortByField*: An optional field to sort the children. Defaults to "null".
+  - *direction*: If you use the "sortByField" argument, this allows you to set the direction: "asc" or "desc". Defaults to "asc".
+  - *includeNode*: Using "true", this argument allows you to include in the result the node you passed as the first argument. Defaults to "false".
+* **childrenHierarchy**: This useful method allows you to build an array of nodes representing the hierarchy of a tree. Arguments:
+  - *node*: If you pass a node, the method will return its children. Defaults to "null" (this means it will return ALL nodes).
+  - *direct*: If you pass true as a value for this argument, you'll get only the direct children of the node
+  - *options*: An array of options that allows you to decorate the results with HTML. Available options:
+      * decorate: boolean (false) - retrieves tree as UL->LI tree
+      * nodeDecorator: Closure (null) - uses $node as argument and returns decorated item as string
+      * rootOpen: string || Closure ('\<ul\>') - branch start, closure will be given $children as a parameter
+      * rootClose: string ('\</ul\>') - branch close
+      * childStart: string || Closure ('\<li\>') - start of node, closure will be given $node as a parameter
+      * childClose: string ('\</li\>') - close of node
+      * childSort: array || keys allowed: field: field to sort on, dir: direction. 'asc' or 'desc'
+  - *includeNode*: Using "true", this argument allows you to include in the result the node you passed as the first argument. Defaults to "false".
+* **setChildrenIndex** / **getChildrenIndex**: These methods allow you to change the default index used to hold the children when you use the **childrenHierarchy** method. Index defaults to "__children".
+
+This list is not complete yet. We're working on including more methods in the common API offered by repositories of all the strategies.
+Soon we'll be adding more helpful methods here.

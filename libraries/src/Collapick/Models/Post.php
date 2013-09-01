@@ -21,9 +21,9 @@ class Post {
 	
     /** 
 	 * @Assert\NotBlank(message="Title can't be blank")
-     * @Assert\MinLength(
-     *     limit=2,
-     *     message="Title must have at least {{ limit }} characters."
+     * @Assert\Length(
+     *     min=2,
+     *     minMessage="Title must have at least {{ limit }} characters."
      * )
 	 * @ORM\Column(type="string") 
 	 **/

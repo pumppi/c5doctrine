@@ -3,7 +3,6 @@
 namespace Gedmo\Loggable;
 
 use Doctrine\Common\EventArgs;
-use Doctrine\Common\Persistence\ObjectManager;
 use Gedmo\Mapping\MappedEventSubscriber;
 use Gedmo\Loggable\Mapping\Event\LoggableAdapter;
 use Gedmo\Tool\Wrapper\AbstractWrapper;
@@ -13,9 +12,6 @@ use Gedmo\Tool\Wrapper\AbstractWrapper;
  *
  * @author Boussekeyt Jules <jules.boussekeyt@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Loggable
- * @subpackage LoggableListener
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class LoggableListener extends MappedEventSubscriber
@@ -65,6 +61,7 @@ class LoggableListener extends MappedEventSubscriber
      * Set username for identification
      *
      * @param mixed $username
+     * @throws \Gedmo\Exception\InvalidArgumentException Invalid username
      */
     public function setUsername($username)
     {
@@ -180,7 +177,7 @@ class LoggableListener extends MappedEventSubscriber
      * Looks for loggable objects being inserted or updated
      * for further processing
      *
-     * @param EventArgs $args
+     * @param EventArgs $eventArgs
      * @return void
      */
     public function onFlush(EventArgs $eventArgs)
@@ -224,6 +221,7 @@ class LoggableListener extends MappedEventSubscriber
         if ($config = $this->getConfiguration($om, $meta->name)) {
             $logEntryClass = $this->getLogEntryClass($ea, $meta->name);
             $logEntryMeta = $om->getClassMetadata($logEntryClass);
+            /** @var \Gedmo\Loggable\Entity\LogEntry $logEntry */
             $logEntry = $logEntryMeta->newInstance();
 
             $logEntry->setAction($action);
@@ -238,8 +236,8 @@ class LoggableListener extends MappedEventSubscriber
             }
             $uow = $om->getUnitOfWork();
             $logEntry->setObjectId($objectId);
+            $newValues = array();
             if ($action !== self::ACTION_REMOVE && isset($config['versioned'])) {
-                $newValues = array();
                 foreach ($ea->getObjectChangeSet($uow, $object) as $field => $changes) {
                     if (!in_array($field, $config['versioned'])) {
                         continue;
@@ -260,6 +258,11 @@ class LoggableListener extends MappedEventSubscriber
                 }
                 $logEntry->setData($newValues);
             }
+            
+            if($action === self::ACTION_UPDATE && 0 === count($newValues)) {
+                return;
+            }
+            
             $version = 1;
             if ($action !== self::ACTION_CREATE) {
                 $version = $ea->getNewVersion($logEntryMeta, $object);

@@ -2,7 +2,12 @@
 
 namespace Gedmo\Mapping;
 
+use Doctrine\Common\Persistence\Mapping\Driver\DefaultFileLocator;
+use Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator;
+use Doctrine\Common\Persistence\Mapping\Driver\MappingDriver;
+use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
 use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Common\Version as CommonLibVer;
 use Gedmo\Mapping\Driver\File as FileDriver;
 use Gedmo\Mapping\Driver\AnnotationDriverInterface;
 use Doctrine\ORM\Tools\DisconnectedClassMetadataFactory;
@@ -12,38 +17,35 @@ use Doctrine\ORM\Tools\DisconnectedClassMetadataFactory;
  * initialization and fully reading the extension metadata
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Mapping
- * @subpackage ExtensionMetadataFactory
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
-final class ExtensionMetadataFactory
+class ExtensionMetadataFactory
 {
     /**
      * Extension driver
-     * @var Gedmo\Mapping\Driver
+     * @var \Gedmo\Mapping\Driver
      */
-    private $driver;
+    protected $driver;
 
     /**
      * Object manager, entity or document
      * @var object
      */
-    private $objectManager;
+    protected $objectManager;
 
     /**
      * Extension namespace
      *
      * @var string
      */
-    private $extensionNamespace;
+    protected $extensionNamespace;
 
     /**
      * Custom annotation reader
      *
      * @var object
      */
-    private $annotationReader;
+    protected $annotationReader;
 
     /**
      * Initializes extension driver
@@ -124,24 +126,29 @@ final class ExtensionMetadataFactory
      * read the metadata required by extension
      *
      * @param object $omDriver
-     * @throws DriverException if driver was not found in extension
-     * @return Gedmo\Mapping\Driver
+     * @throws \Gedmo\Exception\RuntimeException if driver was not found in extension
+     * @return \Gedmo\Mapping\Driver
      */
-    private function getDriver($omDriver)
+    protected function getDriver($omDriver)
     {
         $driver = null;
         $className = get_class($omDriver);
         $driverName = substr($className, strrpos($className, '\\') + 1);
-        if ($driverName == 'DriverChain') {
+        if ($omDriver instanceof MappingDriverChain || $driverName == 'DriverChain') {
             $driver = new Driver\Chain();
             foreach ($omDriver->getDrivers() as $namespace => $nestedOmDriver) {
                 $driver->addDriver($this->getDriver($nestedOmDriver), $namespace);
             }
+            if (version_compare(CommonLibVer::VERSION, '2.3.0', '>=') && $omDriver->getDefaultDriver() !== null) {
+                $driver->setDefaultDriver($this->getDriver($omDriver->getDefaultDriver()));
+            }
         } else {
             $driverName = substr($driverName, 0, strpos($driverName, 'Driver'));
+            $isSimplified = false;
             if (substr($driverName, 0, 10) === 'Simplified') {
                 // support for simplified file drivers
                 $driverName = substr($driverName, 10);
+                $isSimplified = true;
             }
             // create driver instance
             $driverClassName = $this->extensionNamespace . '\Mapping\Driver\\' . $driverName;
@@ -154,8 +161,15 @@ final class ExtensionMetadataFactory
             $driver = new $driverClassName();
             $driver->setOriginalDriver($omDriver);
             if ($driver instanceof FileDriver) {
-                $driver->setPaths($omDriver->getLocator()->getPaths());
-                $driver->setExtension($omDriver->getLocator()->getFileExtension());
+                /** @var $driver FileDriver */
+                if ($omDriver instanceof MappingDriver) {
+                    $driver->setLocator($omDriver->getLocator());
+                // BC for Doctrine 2.2
+                } elseif ($isSimplified) {
+                    $driver->setLocator(new SymfonyFileLocator($omDriver->getNamespacePrefixes(), $omDriver->getFileExtension()));
+                } else {
+                    $driver->setLocator(new DefaultFileLocator($omDriver->getPaths(), $omDriver->getFileExtension()));
+                }
             }
             if ($driver instanceof AnnotationDriverInterface) {
                 $driver->setAnnotationReader($this->annotationReader);

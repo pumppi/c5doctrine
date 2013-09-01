@@ -10,7 +10,6 @@ use Sluggable\Fixture\Article;
  * These are tests for sluggable behavior
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Sluggable
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -86,6 +85,27 @@ class SluggableTest extends BaseTestCaseORM
             $expected = substr($expected, 0, 64 - (strlen($i+1) + 1)) . '-' . ($i+1);
             $this->assertEquals($shorten, $expected);
         }
+    }
+    /**
+     * @test
+     */
+    function doubleDelimiterShouldBeRemoved()
+    {
+        $long = 'Sample long title which should be correctly slugged blablabla';
+        $article = new Article();
+        $article->setTitle($long);
+        $article->setCode('my code');
+        $article2 = new Article();
+        $article2->setTitle($long);
+        $article2->setCode('my code');
+
+        $this->em->persist($article);
+        $this->em->persist($article2);
+        $this->em->flush();
+        $this->em->clear();
+        $this->assertEquals("sample-long-title-which-should-be-correctly-slugged-blablabla-my", $article->getSlug());
+        // OLD IMPLEMENTATION PRODUCE SLUG sample-long-title-which-should-be-correctly-slugged-blablabla--1
+        $this->assertEquals("sample-long-title-which-should-be-correctly-slugged-blablabla-1", $article2->getSlug());
     }
 
     /**

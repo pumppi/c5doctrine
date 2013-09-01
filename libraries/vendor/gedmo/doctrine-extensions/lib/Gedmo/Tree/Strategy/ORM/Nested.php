@@ -14,16 +14,12 @@ use Doctrine\ORM\Query;
 use Gedmo\Mapping\Event\AdapterInterface;
 
 /**
- * This strategy makes tree act like
- * nested set.
+ * This strategy makes the tree act like a nested set.
  *
- * This behavior can inpact the performance of your application
+ * This behavior can impact the performance of your application
  * since nested set trees are slow on inserts and updates.
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Tree.Strategy.ORM
- * @subpackage Nested
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class Nested implements Strategy
@@ -329,23 +325,35 @@ class Nested implements Strategy
             }
             switch ($position) {
                 case self::PREV_SIBLING:
-                    $newParent = $wrappedParent->getPropertyValue($config['parent']);
-                    if (is_null($newParent) && (isset($config['root']) || $isNewNode)) {
-                        throw new UnexpectedValueException("Cannot persist sibling for a root node, tree operation is not possible");
+                    if (property_exists($node, 'sibling')) {
+                        $wrappedSibling = AbstractWrapper::wrap($node->sibling, $em);
+                        $start = $wrappedSibling->getPropertyValue($config['left']);
+                        $level++;
+                    } else {
+                        $newParent = $wrappedParent->getPropertyValue($config['parent']);
+                        if (is_null($newParent) && (isset($config['root']) || $isNewNode)) {
+                            throw new UnexpectedValueException("Cannot persist sibling for a root node, tree operation is not possible");
+                        }
+                        $wrapped->setPropertyValue($config['parent'], $newParent);
+                        $em->getUnitOfWork()->recomputeSingleEntityChangeSet($meta, $node);
+                        $start = $parentLeft;
                     }
-                    $wrapped->setPropertyValue($config['parent'], $newParent);
-                    $em->getUnitOfWork()->recomputeSingleEntityChangeSet($meta, $node);
-                    $start = $parentLeft;
                     break;
 
                 case self::NEXT_SIBLING:
-                    $newParent = $wrappedParent->getPropertyValue($config['parent']);
-                    if (is_null($newParent) && (isset($config['root']) || $isNewNode)) {
-                        throw new UnexpectedValueException("Cannot persist sibling for a root node, tree operation is not possible");
+                    if (property_exists($node, 'sibling')) {
+                        $wrappedSibling = AbstractWrapper::wrap($node->sibling, $em);
+                        $start = $wrappedSibling->getPropertyValue($config['right']) + 1;
+                        $level++;
+                    } else {
+                        $newParent = $wrappedParent->getPropertyValue($config['parent']);
+                        if (is_null($newParent) && (isset($config['root']) || $isNewNode)) {
+                            throw new UnexpectedValueException("Cannot persist sibling for a root node, tree operation is not possible");
+                        }
+                        $wrapped->setPropertyValue($config['parent'], $newParent);
+                        $em->getUnitOfWork()->recomputeSingleEntityChangeSet($meta, $node);
+                        $start = $parentRight + 1;
                     }
-                    $wrapped->setPropertyValue($config['parent'], $newParent);
-                    $em->getUnitOfWork()->recomputeSingleEntityChangeSet($meta, $node);
-                    $start = $parentRight + 1;
                     break;
 
                 case self::LAST_CHILD:

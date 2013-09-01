@@ -12,13 +12,17 @@ use Doctrine\Common\Annotations\Annotation;
  *
  * @author Gustavo Falco <comfortablynumb84@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Mapping.Annotation
- * @subpackage TreePath
- * @link http://www.gediminasm.org
+ * @author <rocco@roccosportal.com>
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 final class TreePath extends Annotation
 {
     public $separator = ',';
+
+    public $appendId = null;
+
+    public $startsWithSeparator = false;
+
+    public $endsWithSeparator = true;
 }
 

@@ -50,7 +50,8 @@ on how to setup and use the extensions in most optimized way.
     * **pathMethod** - Similar to option "path", but this time it represents the name of a method on the entity that
     will return the path to which the files represented by this entity will be moved. This is useful in several cases.
     For example, you can set specific paths for specific entities, or you can get the path from other sources (like a
-    framework configuration) instead of hardcoding it in the entity. Default: ""
+    framework configuration) instead of hardcoding it in the entity. Default: "". As first argument this method takes
+    default path, so you can return path relative to default.
     * **callback** - This option allows you to set a method name. If this option is set, the method will be called after
     the file is moved. Default value: "". As first argument, this method can receive an array with information about the uploaded file, which
     includes the following keys:
@@ -299,19 +300,19 @@ Entity\File:
 
 $listener->setDefaultPath('/my/app/web/upload');
 
-if (isset($_FILES['images']) && is_array($_FILES['images']) {
+if (isset($_FILES['images']) && is_array($_FILES['images'])) {
     foreach ($_FILES['images'] as $fileInfo) {
         $file = new File();
 
-        $listener->setEntityFileInfo($file, $fileInfo);
+        $listener->addEntityFileInfo($file, $fileInfo);
 
         // You can set the file info directly with a FileInfoInterface object, like this:
         //
-        // $listener->setEntityFileInfo($file, new FileInfoArray($fileInfo));
+        // $listener->addEntityFileInfo($file, new FileInfoArray($fileInfo));
         //
         // Or create your own class which implements FileInfoInterface
         //
-        // $listener->setEntityFileInfo($file, new MyOwnFileInfo($fileInfo));
+        // $listener->addEntityFileInfo($file, new MyOwnFileInfo($fileInfo));
 
 
         $em->persist($file);

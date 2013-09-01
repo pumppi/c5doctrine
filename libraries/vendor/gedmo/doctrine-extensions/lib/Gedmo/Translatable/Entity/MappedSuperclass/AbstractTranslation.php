@@ -49,7 +49,7 @@ abstract class AbstractTranslation
     protected $foreignKey;
 
     /**
-     * @var text $content
+     * @var string $content
      *
      * @ORM\Column(type="text", nullable=true)
      */
@@ -156,7 +156,7 @@ abstract class AbstractTranslation
     /**
      * Set content
      *
-     * @param text $content
+     * @param string $content
      * @return AbstractTranslation
      */
     public function setContent($content)
@@ -168,7 +168,7 @@ abstract class AbstractTranslation
     /**
      * Get content
      *
-     * @return text $content
+     * @return string $content
      */
     public function getContent()
     {

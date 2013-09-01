@@ -68,6 +68,13 @@ class UnitOfWork implements PropertyChangedListener
     const STATE_REMOVED = 4;
 
     /**
+     * Hint used to collect all primary keys of associated entities during hydration
+     * and execute it in a dedicated query afterwards
+     * @see https://doctrine-orm.readthedocs.org/en/latest/reference/dql-doctrine-query-language.html?highlight=eager#temporarily-change-fetch-mode-in-dql
+     */
+    const HINT_DEFEREAGERLOAD = 'deferEagerLoad';
+
+    /**
      * The identity map that holds references to all managed entities that have
      * an identity. The entities are grouped by their class name.
      * Since all classes in a hierarchy must share the same identifier set,
@@ -400,13 +407,15 @@ class UnitOfWork implements PropertyChangedListener
      */
     private function computeSingleEntityChangeSet($entity)
     {
-        if ( $this->getEntityState($entity) !== self::STATE_MANAGED) {
-            throw new \InvalidArgumentException("Entity has to be managed for single computation " . self::objToStr($entity));
+        $state = $this->getEntityState($entity);
+
+        if ($state !== self::STATE_MANAGED && $state !== self::STATE_REMOVED) {
+            throw new \InvalidArgumentException("Entity has to be managed or scheduled for removal for single computation " . self::objToStr($entity));
         }
 
         $class = $this->em->getClassMetadata(get_class($entity));
 
-        if ($class->isChangeTrackingDeferredImplicit()) {
+        if ($state === self::STATE_MANAGED && $class->isChangeTrackingDeferredImplicit()) {
             $this->persist($entity);
         }
 
@@ -980,7 +989,7 @@ class UnitOfWork implements PropertyChangedListener
                 );
             }
 
-            if ($this->entityChangeSets[$oid]) {
+            if (!empty($this->entityChangeSets[$oid])) {
                 $persister->update($entity);
             }
 
@@ -1376,6 +1385,10 @@ class UnitOfWork implements PropertyChangedListener
             return self::STATE_NEW;
         }
 
+        if ($class->containsForeignIdentifier) {
+            $id = $this->flattenIdentifier($class, $id);
+        }
+
         switch (true) {
             case ($class->isIdentifierNatural());
                 // Check for a version field, if available, to avoid a db lookup.
@@ -1689,6 +1702,29 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * convert foreign identifiers into scalar foreign key values to avoid object to string conversion failures.
+     *
+     * @param ClassMetadata $class
+     * @param array $id
+     * @return array
+     */
+    private function flattenIdentifier($class, $id)
+    {
+        $flatId = array();
+
+        foreach ($id as $idField => $idValue) {
+            if (isset($class->associationMappings[$idField])) {
+                $targetClassMetadata = $this->em->getClassMetadata($class->associationMappings[$idField]['targetEntity']);
+                $associatedId        = $this->getEntityIdentifier($idValue);
+
+                $flatId[$idField] = $associatedId[$targetClassMetadata->identifier[0]];
+            }
+        }
+
+        return $flatId;
+    }
+
+    /**
      * Executes a merge operation on an entity.
      *
      * @param object $entity
@@ -1735,19 +1771,9 @@ class UnitOfWork implements PropertyChangedListener
 
                 $this->persistNew($class, $managedCopy);
             } else {
-                $flatId = $id;
-                if ($class->containsForeignIdentifier) {
-                    // convert foreign identifiers into scalar foreign key
-                    // values to avoid object to string conversion failures.
-                    foreach ($id as $idField => $idValue) {
-                        if (isset($class->associationMappings[$idField])) {
-                            $targetClassMetadata = $this->em->getClassMetadata($class->associationMappings[$idField]['targetEntity']);
-                            $associatedId        = $this->getEntityIdentifier($idValue);
-
-                            $flatId[$idField] = $associatedId[$targetClassMetadata->identifier[0]];
-                        }
-                    }
-                }
+                $flatId = ($class->containsForeignIdentifier)
+                    ? $this->flattenIdentifier($class, $id)
+                    : $id;
 
                 $managedCopy = $this->tryGetById($flatId, $class->rootEntityName);
 
@@ -1807,7 +1833,7 @@ class UnitOfWork implements PropertyChangedListener
                             // do not merge fields marked lazy that have not been fetched.
                             continue;
                         } else if ( ! $assoc2['isCascadeMerge']) {
-                            if ($this->getEntityState($other, self::STATE_DETACHED) !== self::STATE_MANAGED) {
+                            if ($this->getEntityState($other) === self::STATE_DETACHED) {
                                 $targetClass = $this->em->getClassMetadata($assoc2['targetEntity']);
                                 $relatedId = $targetClass->getIdentifierValues($other);
 
@@ -1818,6 +1844,7 @@ class UnitOfWork implements PropertyChangedListener
                                     $this->registerManaged($other, $relatedId, array());
                                 }
                             }
+
                             $prop->setValue($managedCopy, $other);
                         }
                     } else {
@@ -2209,6 +2236,10 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function lock($entity, $lockMode, $lockVersion = null)
     {
+        if ($entity === null) {
+            throw new \InvalidArgumentException("No entity passed to UnitOfWork#lock().");
+        }
+
         if ($this->getEntityState($entity, self::STATE_DETACHED) != self::STATE_MANAGED) {
             throw ORMInvalidArgumentException::entityNotManaged($entity);
         }
@@ -2415,17 +2446,23 @@ class UnitOfWork implements PropertyChangedListener
                 if ($entity instanceof NotifyPropertyChanged) {
                     $entity->addPropertyChangedListener($this);
                 }
+
+                // inject ObjectManager into just loaded proxies.
+                if ($overrideLocalValues && $entity instanceof ObjectManagerAware) {
+                    $entity->injectObjectManager($this->em, $class);
+                }
+
             } else {
                 $overrideLocalValues = isset($hints[Query::HINT_REFRESH]);
 
                 // If only a specific entity is set to refresh, check that it's the one
                 if(isset($hints[Query::HINT_REFRESH_ENTITY])) {
                     $overrideLocalValues = $hints[Query::HINT_REFRESH_ENTITY] === $entity;
+                }
 
-                    // inject ObjectManager into just loaded proxies.
-                    if ($overrideLocalValues && $entity instanceof ObjectManagerAware) {
-                        $entity->injectObjectManager($this->em, $class);
-                    }
+                // inject ObjectManager upon refresh.
+                if ($overrideLocalValues && $entity instanceof ObjectManagerAware) {
+                    $entity->injectObjectManager($this->em, $class);
                 }
             }
 
@@ -2529,7 +2566,7 @@ class UnitOfWork implements PropertyChangedListener
                             // this association is marked as eager fetch, and its an uninitialized proxy (wtf!)
                             // then we can append this entity for eager loading!
                             if ($hints['fetchMode'][$class->name][$field] == ClassMetadata::FETCH_EAGER &&
-                                isset($hints['deferEagerLoad']) &&
+                                isset($hints[self::HINT_DEFEREAGERLOAD]) &&
                                 !$targetClass->isIdentifierComposite &&
                                 $newValue instanceof Proxy &&
                                 $newValue->__isInitialized__ === false) {
@@ -2554,7 +2591,7 @@ class UnitOfWork implements PropertyChangedListener
                                     break;
 
                                 // Deferred eager load only works for single identifier classes
-                                case (isset($hints['deferEagerLoad']) && ! $targetClass->isIdentifierComposite):
+                                case (isset($hints[self::HINT_DEFEREAGERLOAD]) && ! $targetClass->isIdentifierComposite):
                                     // TODO: Is there a faster approach?
                                     $this->eagerLoadingEntities[$targetClass->rootEntityName][$relatedIdHash] = current($associatedId);
 
@@ -2571,6 +2608,10 @@ class UnitOfWork implements PropertyChangedListener
                             $newValueOid = spl_object_hash($newValue);
                             $this->entityIdentifiers[$newValueOid] = $associatedId;
                             $this->identityMap[$targetClass->rootEntityName][$relatedIdHash] = $newValue;
+
+                            if ($newValue instanceof NotifyPropertyChanged) {
+                                $newValue->addPropertyChangedListener($this);
+                            }
                             $this->entityStates[$newValueOid] = self::STATE_MANAGED;
                             // make sure that when an proxy is then finally loaded, $this->originalEntityData is set also!
                             break;

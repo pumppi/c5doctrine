@@ -10,7 +10,6 @@ use Timestampable\Fixture\UsingTrait;
  * These are tests for Timestampable behavior
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Timestampable
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -45,6 +44,16 @@ class TraitUsageTest extends BaseTestCaseORM
 
         $this->assertNotNull($sport->getCreatedAt());
         $this->assertNotNull($sport->getUpdatedAt());
+    }
+
+    /**
+     * @test
+     */
+    function traitMethodthShouldReturnObject()
+    {
+        $sport = new UsingTrait;
+        $this->assertInstanceOf('Timestampable\Fixture\UsingTrait', $sport->setCreatedAt(new \DateTime()));
+        $this->assertInstanceOf('Timestampable\Fixture\UsingTrait', $sport->setUpdatedAt(new \DateTime()));
     }
 
     protected function getUsedEntityFixtures()

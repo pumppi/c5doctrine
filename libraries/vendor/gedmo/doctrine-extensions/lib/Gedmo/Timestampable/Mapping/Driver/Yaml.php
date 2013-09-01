@@ -13,9 +13,6 @@ use Gedmo\Mapping\Driver\File,
  * extension.
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Timestampable.Mapping.Driver
- * @subpackage Yaml
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class Yaml extends File implements Driver
@@ -35,9 +32,11 @@ class Yaml extends File implements Driver
         'date',
         'time',
         'datetime',
+        'datetimetz',
         'timestamp',
         'zenddate',
-        'vardatetime'
+        'vardatetime',
+        'integer'
     );
 
     /**
@@ -59,13 +58,18 @@ class Yaml extends File implements Driver
                     }
 
                     if ($mappingProperty['on'] == 'change') {
-                        if (!isset($mappingProperty['field']) || !isset($mappingProperty['value'])) {
-                            throw new InvalidMappingException("Missing parameters on property - {$field}, field and value must be set on [change] trigger in class - {$meta->name}");
+                        if (!isset($mappingProperty['field'])) {
+                            throw new InvalidMappingException("Missing parameters on property - {$field}, field must be set on [change] trigger in class - {$meta->name}");
+                        }
+                        $trackedFieldAttribute = $mappingProperty['field'];
+                        $valueAttribute = isset($mappingProperty['value']) ? $mappingProperty['value'] : null;
+                        if (is_array($trackedFieldAttribute) && null !== $valueAttribute) {
+                            throw new InvalidMappingException("Timestampable extension does not support multiple value changeset detection yet.");
                         }
                         $field = array(
                             'field' => $field,
-                            'trackedField' => $mappingProperty['field'],
-                            'value' => $mappingProperty['value']
+                            'trackedField' => $trackedFieldAttribute,
+                            'value' => $valueAttribute,
                         );
                     }
                     $config[$mappingProperty['on']][] = $field;

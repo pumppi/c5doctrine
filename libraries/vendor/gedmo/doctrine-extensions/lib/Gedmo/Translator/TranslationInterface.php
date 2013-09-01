@@ -6,7 +6,6 @@ namespace Gedmo\Translator;
  * Entity/Document translation interface.
  *
  * @author  Konstantin Kudryashov <ever.zet@gmail.com>
- * @link    http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 interface TranslationInterface
@@ -42,7 +41,7 @@ interface TranslationInterface
     /**
      * Set property
      *
-     * @param string $field
+     * @param string $property
      */
     function setProperty($property);
 
@@ -56,15 +55,15 @@ interface TranslationInterface
     /**
      * Set value
      *
-     * @param text $value
-     * @return AbstractTranslation
+     * @param string $value
+     * @return TranslationInterface
      */
     function setValue($value);
 
     /**
      * Get value
      *
-     * @return text $value
+     * @return string $value
      */
     function getValue();
 }

@@ -13,7 +13,6 @@ use Translatable\Fixture\Comment;
  * These are tests for translation query walker
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Translatable
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -237,6 +236,36 @@ class TranslationQueryWalkerTest extends BaseTestCaseORM
         // array hydration
         $result = $q->getArrayResult();
         $this->assertCount(0, $result);
+    }
+
+    /**
+     * referres to issue #755
+     * @test
+     */
+    public function shouldBeAbleToOverrideTranslationFallbackByHint()
+    {
+        $this->translatableListener->setTranslatableLocale('lt_lt');
+        $this->translatableListener->setTranslationFallback(false);
+
+        $dql = 'SELECT a FROM ' . self::ARTICLE . ' a';
+        $q = $this->em->createQuery($dql);
+        $q->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, self::TREE_WALKER_TRANSLATION);
+        $q->setHint(TranslatableListener::HINT_TRANSLATABLE_LOCALE, 'undefined');
+        $q->setHint(TranslatableListener::HINT_FALLBACK, true);
+
+        // array hydration
+        $result = $q->getArrayResult();
+        $this->assertCount(1, $result);
+        $this->assertEquals('Food', $result[0]['title']);
+
+        // fallback false hint
+        $q->setHint(TranslatableListener::HINT_FALLBACK, false);
+
+        // array hydration
+        $result = $q->getArrayResult();
+        $this->assertCount(1, $result);
+        $this->assertEquals(null, $result[0]['title']);
+
     }
 
     /**

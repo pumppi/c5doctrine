@@ -2,7 +2,8 @@
 
 namespace Gedmo\Loggable\Mapping\Driver;
 
-use Gedmo\Mapping\Driver\AnnotationDriverInterface,
+use Doctrine\Common\Persistence\Mapping\ClassMetadata,
+    Gedmo\Mapping\Driver\AbstractAnnotationDriver,
     Gedmo\Exception\InvalidMappingException;
 
 /**
@@ -13,12 +14,9 @@ use Gedmo\Mapping\Driver\AnnotationDriverInterface,
  *
  * @author Boussekeyt Jules <jules.boussekeyt@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Loggable.Mapping.Driver
- * @subpackage Annotation
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
-class Annotation implements AnnotationDriverInterface
+class Annotation extends AbstractAnnotationDriver
 {
     /**
      * Annotation to define that this object is loggable
@@ -31,28 +29,9 @@ class Annotation implements AnnotationDriverInterface
     const VERSIONED = 'Gedmo\\Mapping\\Annotation\\Versioned';
 
     /**
-     * Annotation reader instance
-     *
-     * @var object
-     */
-    private $reader;
-
-    /**
-     * original driver if it is available
-     */
-    protected $_originalDriver = null;
-    /**
      * {@inheritDoc}
      */
-    public function setAnnotationReader($reader)
-    {
-        $this->reader = $reader;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function validateFullMetadata($meta, array $config)
+    public function validateFullMetadata(ClassMetadata $meta, array $config)
     {
         if ($config && is_array($meta->identifier) && count($meta->identifier) > 1) {
             throw new InvalidMappingException("Loggable does not support composite identifiers in class - {$meta->name}");
@@ -67,13 +46,7 @@ class Annotation implements AnnotationDriverInterface
      */
     public function readExtendedMetadata($meta, array &$config)
     {
-        $class = $meta->getReflectionClass();
-        if (!$class) {
-            // based on recent doctrine 2.3.0-DEV maybe will be fixed in some way
-            // this happens when running annotation driver in combination with
-            // static reflection services. This is not the nicest fix
-            $class = new \ReflectionClass($meta->name);
-        }
+        $class = $this->getMetaReflectionClass($meta);
         // class annotations
         if ($annot = $this->reader->getClassAnnotation($class, self::LOGGABLE)) {
             $config['loggable'] = true;
@@ -111,16 +84,5 @@ class Annotation implements AnnotationDriverInterface
                 throw new InvalidMappingException("Class must be annoted with Loggable annotation in order to track versioned fields in class - {$meta->name}");
             }
         }
-    }
-
-    /**
-     * Passes in the mapping read by original driver
-     *
-     * @param $driver
-     * @return void
-     */
-    public function setOriginalDriver($driver)
-    {
-        $this->_originalDriver = $driver;
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Gedmo\Uploadable\Mapping\Driver;
 
-use Gedmo\Mapping\Driver\AnnotationDriverInterface,
+use Gedmo\Mapping\Driver\AbstractAnnotationDriver,
     Doctrine\Common\Persistence\Mapping\ClassMetadata,
     Gedmo\Exception\InvalidMappingException,
     Gedmo\Uploadable\Mapping\Validator;
@@ -15,12 +15,9 @@ use Gedmo\Mapping\Driver\AnnotationDriverInterface,
  *
  * @author Gustavo Falco <comfortablynumb84@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Uploadable.Mapping.Driver
- * @subpackage Annotation
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
-class Annotation implements AnnotationDriverInterface
+class Annotation extends AbstractAnnotationDriver
 {
     /**
      * Annotation to define that this object is loggable
@@ -31,45 +28,12 @@ class Annotation implements AnnotationDriverInterface
     const UPLOADABLE_FILE_SIZE = 'Gedmo\\Mapping\\Annotation\\UploadableFileSize';
 
     /**
-     * Annotation reader instance
-     *
-     * @var object
-     */
-    private $reader;
-
-    /**
-     * original driver if it is available
-     */
-    protected $_originalDriver = null;
-    /**
-     * {@inheritDoc}
-     */
-    public function setAnnotationReader($reader)
-    {
-        $this->reader = $reader;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function validateFullMetadata(ClassMetadata $meta, array $config)
-    {
-        // Nothing here for now
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function readExtendedMetadata($meta, array &$config)
     {
-        $class = $meta->getReflectionClass();
-        
-        if (!$class) {
-            // based on recent doctrine 2.3.0-DEV maybe will be fixed in some way
-            // this happens when running annotation driver in combination with
-            // static reflection services. This is not the nicest fix
-            $class = new \ReflectionClass($meta->name);
-        }
+        $class = $this->getMetaReflectionClass($meta);
+
         // class annotations
         if ($annot = $this->reader->getClassAnnotation($class, self::UPLOADABLE)) {
             $config['uploadable'] = true;
@@ -130,16 +94,5 @@ class Annotation implements AnnotationDriverInterface
         }*/
 
         $this->validateFullMetadata($meta, $config);
-    }
-
-    /**
-     * Passes in the mapping read by original driver
-     *
-     * @param $driver
-     * @return void
-     */
-    public function setOriginalDriver($driver)
-    {
-        $this->_originalDriver = $driver;
     }
 }

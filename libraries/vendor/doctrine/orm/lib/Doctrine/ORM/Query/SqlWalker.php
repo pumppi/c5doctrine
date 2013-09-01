@@ -750,7 +750,10 @@ class SqlWalker implements TreeWalker
         $sqlParts = array();
 
         foreach ($identificationVarDecls as $identificationVariableDecl) {
-            $sql = $this->walkRangeVariableDeclaration($identificationVariableDecl->rangeVariableDeclaration);
+            $sql = $this->platform->appendLockHint(
+                $this->walkRangeVariableDeclaration($identificationVariableDecl->rangeVariableDeclaration),
+                $this->query->getHint(Query::HINT_LOCK_MODE)
+            );
 
             foreach ($identificationVariableDecl->joins as $join) {
                 $sql .= $this->walkJoin($join);
@@ -770,7 +773,7 @@ class SqlWalker implements TreeWalker
                 }
             }
 
-            $sqlParts[] = $this->platform->appendLockHint($sql, $this->query->getHint(Query::HINT_LOCK_MODE));
+            $sqlParts[] = $sql;
         }
 
         return ' FROM ' . implode(', ', $sqlParts);
@@ -1007,8 +1010,13 @@ class SqlWalker implements TreeWalker
 
         switch (true) {
             case ($joinDeclaration instanceof \Doctrine\ORM\Query\AST\RangeVariableDeclaration):
+                $class = $this->em->getClassMetadata($joinDeclaration->abstractSchemaName);
+                $condExprConjunction = $class->isInheritanceTypeJoined() && $joinType != AST\Join::JOIN_TYPE_LEFT && $joinType != AST\Join::JOIN_TYPE_LEFTOUTER
+                    ? ' AND '
+                    : ' ON ';
+
                 $sql .= $this->walkRangeVariableDeclaration($joinDeclaration)
-                      . ' ON (' . $this->walkConditionalExpression($join->conditionalExpression) . ')';
+                      . $condExprConjunction . '(' . $this->walkConditionalExpression($join->conditionalExpression) . ')';
                 break;
 
             case ($joinDeclaration instanceof \Doctrine\ORM\Query\AST\JoinAssociationDeclaration):
@@ -1147,7 +1155,7 @@ class SqlWalker implements TreeWalker
         switch (true) {
             case ($expr instanceof AST\PathExpression):
                 if ($expr->type !== AST\PathExpression::TYPE_STATE_FIELD) {
-                    throw QueryException::invalidPathExpression($expr->type);
+                    throw QueryException::invalidPathExpression($expr);
                 }
 
                 $fieldName = $expr->field;
@@ -1188,7 +1196,6 @@ class SqlWalker implements TreeWalker
             case ($expr instanceof AST\SimpleArithmeticExpression):
             case ($expr instanceof AST\ArithmeticTerm):
             case ($expr instanceof AST\ArithmeticFactor):
-            case ($expr instanceof AST\ArithmeticPrimary):
             case ($expr instanceof AST\Literal):
             case ($expr instanceof AST\NullIfExpression):
             case ($expr instanceof AST\CoalesceExpression):
@@ -1363,13 +1370,16 @@ class SqlWalker implements TreeWalker
         $sqlParts = array ();
 
         foreach ($identificationVarDecls as $subselectIdVarDecl) {
-            $sql = $this->walkRangeVariableDeclaration($subselectIdVarDecl->rangeVariableDeclaration);
+            $sql = $this->platform->appendLockHint(
+                $this->walkRangeVariableDeclaration($subselectIdVarDecl->rangeVariableDeclaration),
+                $this->query->getHint(Query::HINT_LOCK_MODE)
+            );
 
             foreach ($subselectIdVarDecl->joins as $join) {
                 $sql .= $this->walkJoin($join);
             }
 
-            $sqlParts[] = $this->platform->appendLockHint($sql, $this->query->getHint(Query::HINT_LOCK_MODE));
+            $sqlParts[] = $sql;
         }
 
         return ' FROM ' . implode(', ', $sqlParts);
@@ -1422,7 +1432,6 @@ class SqlWalker implements TreeWalker
             case ($expr instanceof AST\SimpleArithmeticExpression):
             case ($expr instanceof AST\ArithmeticTerm):
             case ($expr instanceof AST\ArithmeticFactor):
-            case ($expr instanceof AST\ArithmeticPrimary):
             case ($expr instanceof AST\Literal):
             case ($expr instanceof AST\NullIfExpression):
             case ($expr instanceof AST\CoalesceExpression):
@@ -1609,7 +1618,7 @@ class SqlWalker implements TreeWalker
 
             if (count($filterClauses)) {
                 if ($condSql) {
-                    $condSql .= ' AND ';
+                    $condSql = '(' . $condSql . ') AND ';
                 }
 
                 $condSql .= implode(' AND ', $filterClauses);
@@ -1907,31 +1916,22 @@ class SqlWalker implements TreeWalker
 
         foreach ($instanceOfExpr->value as $parameter) {
             if ($parameter instanceof AST\InputParameter) {
-                // We need to modify the parameter value to be its correspondent mapped value
-                $dqlParamKey = $parameter->name;
-                $dqlParam    = $this->query->getParameter($dqlParamKey);
-                $paramValue  = $this->query->processParameterValue($dqlParam->getValue());
-
-                if ( ! ($paramValue instanceof \Doctrine\ORM\Mapping\ClassMetadata)) {
-                    throw QueryException::invalidParameterType('ClassMetadata', get_class($paramValue));
-                }
-
-                $entityClassName = $paramValue->name;
+                $sqlParameterList[] = $this->walkInputParameter($parameter);
             } else {
                 // Get name from ClassMetadata to resolve aliases.
                 $entityClassName = $this->em->getClassMetadata($parameter)->name;
-            }
 
-            if ($entityClassName == $class->name) {
-                $sqlParameterList[] = $this->conn->quote($class->discriminatorValue);
-            } else {
-                $discrMap = array_flip($class->discriminatorMap);
+                if ($entityClassName == $class->name) {
+                    $sqlParameterList[] = $this->conn->quote($class->discriminatorValue);
+                } else {
+                    $discrMap = array_flip($class->discriminatorMap);
 
-                if (!isset($discrMap[$entityClassName])) {
-                    throw QueryException::instanceOfUnrelatedClass($entityClassName, $class->rootEntityName);
+                    if (!isset($discrMap[$entityClassName])) {
+                        throw QueryException::instanceOfUnrelatedClass($entityClassName, $class->rootEntityName);
+                    }
+
+                    $sqlParameterList[] = $this->conn->quote($discrMap[$entityClassName]);
                 }
-
-                $sqlParameterList[] = $this->conn->quote($discrMap[$entityClassName]);
             }
         }
 

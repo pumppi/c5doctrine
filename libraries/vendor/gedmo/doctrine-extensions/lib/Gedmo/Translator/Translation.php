@@ -6,7 +6,6 @@ namespace Gedmo\Translator;
  * Base translation class.
  *
  * @author  Konstantin Kudryashov <ever.zet@gmail.com>
- * @link    http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 abstract class Translation implements TranslationInterface
@@ -59,7 +58,7 @@ abstract class Translation implements TranslationInterface
     /**
      * Set property
      *
-     * @param string $field
+     * @param string $property
      */
     public function setProperty($property)
     {
@@ -79,8 +78,8 @@ abstract class Translation implements TranslationInterface
     /**
      * Set value
      *
-     * @param text $value
-     * @return AbstractTranslation
+     * @param string $value
+     * @return Translation
      */
     public function setValue($value)
     {
@@ -91,7 +90,7 @@ abstract class Translation implements TranslationInterface
     /**
      * Get value
      *
-     * @return text $value
+     * @return string $value
      */
     public function getValue()
     {

@@ -9,7 +9,6 @@ use Gedmo\Uploadable\Mapping\Validator;
  *
  * @author Gustavo Falco <comfortablynumb84@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Uploadable.Mapping
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -23,6 +22,11 @@ class ValidatorTest extends \PHPUnit_Framework_TestCase
         $this->meta = $this->getMock('Doctrine\ORM\Mapping\ClassMetadata', array(), array(), '', false);
 
         Validator::$enableMimeTypesConfigException = false;
+    }
+
+    public function tearDown()
+    {
+        Validator::$enableMimeTypesConfigException = true;
     }
 
     /**
@@ -50,12 +54,41 @@ class ValidatorTest extends \PHPUnit_Framework_TestCase
         Validator::validatePath('');
     }
 
-    /**
-     * @expectedException Gedmo\Exception\UploadableCantWriteException
-     */
     public function test_validatePath_ifPassedDirIsNotAValidDirectoryOrIsNotWriteableThrowException()
     {
+        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+            $this->markTestSkipped('Not possible to test on Windows');
+        }
+
+        $dir = sys_get_temp_dir().'/readonly-directory-12312432423';
+        mkdir($dir, 0000, true);
+        try {
+            Validator::validatePath('/');
+        } catch (\Gedmo\Exception\UploadableCantWriteException $e) {
+            rmdir($dir);
+            return;
+        }
+
+        rmdir($dir);
+        $this->fail(
+            sprintf('An expected exception "%s" has not been raised.', 'Gedmo\Exception\UploadableCantWriteException')
+        );
+    }
+
+    public function test_validatePathCreatesNewDirectoryWhenItNotExists()
+    {
+        $dir = sys_get_temp_dir().'/new/directory-12312432423';
+        Validator::validatePath($dir);
+        $this->assertTrue(is_dir($dir));
+        rmdir($dir);
+        rmdir(dirname($dir));
+    }
+
+    public function test_validatePath_ifPassedDirIsNotAValidDirectoryOrIsNotWriteableDoesNotThrowExceptionIfDisabled()
+    {
+        Validator::$validateWritableDirectory = false;
         Validator::validatePath('/invalid/directory/12312432423');
+        Validator::$validateWritableDirectory = true;
     }
 
     /**

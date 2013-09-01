@@ -5,6 +5,7 @@ namespace Gedmo;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\ORM\Mapping\Driver as DriverORM;
 use Doctrine\ODM\MongoDB\Mapping\Driver as DriverMongodbODM;
+use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Annotations\AnnotationReader;
@@ -15,9 +16,6 @@ use Doctrine\Common\Cache\ArrayCache;
  * and the current version of doctrine extensions
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @subpackage DoctrineExtensions
- * @package Gedmo
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 final class DoctrineExtensions
@@ -25,24 +23,16 @@ final class DoctrineExtensions
     /**
      * Current version of extensions
      */
-    const VERSION = '2.3.0-DEV';
-
-    /**
-     * Flag if annotations were included into registry
-     * allready
-     *
-     * @var boolean
-     */
-    private static $autoloaded = false;
+    const VERSION = '2.3.6';
 
     /**
      * Hooks all extensions metadata mapping drivers
      * into given $driverChain of drivers for ORM
      *
-     * @param \Doctrine\ORM\Mapping\Driver\DriverChain $driverChain
+     * @param \Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain $driverChain
      * @param \Doctrine\Common\Annotations\Reader $reader
      */
-    public static function registerMappingIntoDriverChainORM(DriverORM\DriverChain $driverChain, Reader $reader = null)
+    public static function registerMappingIntoDriverChainORM(MappingDriverChain $driverChain, Reader $reader = null)
     {
         self::registerAnnotations();
         if (!$reader) {
@@ -60,10 +50,10 @@ final class DoctrineExtensions
      * Hooks only superclass metadata mapping drivers
      * into given $driverChain of drivers for ORM
      *
-     * @param \Doctrine\ORM\Mapping\Driver\DriverChain $chain
+     * @param \Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain $driverChain
      * @param \Doctrine\Common\Annotations\Reader $reader
      */
-    public static function registerAbstractMappingIntoDriverChainORM(DriverORM\DriverChain $driverChain, Reader $reader = null)
+    public static function registerAbstractMappingIntoDriverChainORM(MappingDriverChain $driverChain, Reader $reader = null)
     {
         self::registerAnnotations();
         if (!$reader) {
@@ -81,10 +71,10 @@ final class DoctrineExtensions
      * Hooks all extensions metadata mapping drivers
      * into given $driverChain of drivers for ODM MongoDB
      *
-     * @param \Doctrine\ODM\MongoDB\Mapping\Driver\DriverChain $driverChain
+     * @param \Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain $driverChain
      * @param \Doctrine\Common\Annotations\Reader $reader
      */
-    public static function registerMappingIntoDriverChainMongodbODM(DriverMongodbODM\DriverChain $driverChain, Reader $reader = null)
+    public static function registerMappingIntoDriverChainMongodbODM(MappingDriverChain $driverChain, Reader $reader = null)
     {
         self::registerAnnotations();
         if (!$reader) {
@@ -101,10 +91,10 @@ final class DoctrineExtensions
      * Hooks only superclass metadata mapping drivers
      * into given $driverChain of drivers for ODM MongoDB
      *
-     * @param \Doctrine\ODM\MongoDB\Mapping\Driver\DriverChain $driverChain
+     * @param \Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain $driverChain
      * @param \Doctrine\Common\Annotations\Reader $reader
      */
-    public static function registerAbstractMappingIntoDriverChainMongodbODM(DriverMongodbODM\DriverChain $driverChain, Reader $reader = null)
+    public static function registerAbstractMappingIntoDriverChainMongodbODM(MappingDriverChain $driverChain, Reader $reader = null)
     {
         self::registerAnnotations();
         if (!$reader) {
@@ -122,9 +112,6 @@ final class DoctrineExtensions
      */
     public static function registerAnnotations()
     {
-        if (!self::$autoloaded) {
-            AnnotationRegistry::registerFile(__DIR__.'/Mapping/Annotation/All.php');
-            self::$autoloaded = true;
-        }
+        AnnotationRegistry::registerFile(__DIR__.'/Mapping/Annotation/All.php');
     }
 }

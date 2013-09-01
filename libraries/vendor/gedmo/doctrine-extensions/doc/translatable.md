@@ -618,7 +618,7 @@ translated field values in default locale set.
 
 In some cases if there are thousands of records or even more.. we would like to
 have a single table for translations of this Entity in order to increase the performance
-on translation loading speed. This example will show how to specify a diferent Entity for
+on translation loading speed. This example will show how to specify a different Entity for
 your translations by extending the mapped superclass.
 
 ArticleTranslation Entity:
@@ -632,7 +632,7 @@ use Gedmo\Translatable\Entity\MappedSuperclass\AbstractTranslation;
 
 /**
  * @ORM\Table(name="article_translations", indexes={
- *      @ORM\index(name="article_translation_idx", columns={"locale", "object_class", "field", "foreign_key"})
+ *      @ORM\Index(name="article_translation_idx", columns={"locale", "object_class", "field", "foreign_key"})
  * })
  * @ORM\Entity(repositoryClass="Gedmo\Translatable\Entity\Repository\TranslationRepository")
  */
@@ -674,7 +674,7 @@ Now all translations of Article will be stored and queried from specific table
 Translatable has **AbstractPersonalTranslation** mapped superclass, which must
 be extended and mapped based on your **entity** which you want to translate.
 Note: translations are not automapped because of user preference based on cascades
-or other possible choises, which user can make.
+or other possible choices, which user can make.
 Personal translations uses foreign key constraint which is fully managed by ORM and
 allows to have a collection of related translations. User can use it anyway he likes, etc.:
 implementing array access on entity, using left join to fill collection and so on.
@@ -844,7 +844,7 @@ Easy like that, any suggestions on improvements are very welcome
 
 ### Example code to use Personal Translations with (Symfony2 Sonata) i18n Forms:
 
-Suppose you have a Sonata Backend with s a simple form like:
+Suppose you have a Sonata Backend with a simple form like:
 
 ``` php
 <?php
@@ -892,3 +892,7 @@ Then you can change to your needs:
 
 ```
 
+
+### Translations field type using Personal Translations with Symfony2:
+
+You can use [A2lixTranslationFormBundle](https://github.com/a2lix/TranslationFormBundle) to facilitate your translations.

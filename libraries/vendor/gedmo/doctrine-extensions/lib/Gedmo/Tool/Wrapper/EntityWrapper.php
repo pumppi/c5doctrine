@@ -10,9 +10,6 @@ use Doctrine\ORM\Proxy\Proxy;
  * manipulation
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Tool.Wrapper
- * @subpackage EntityWrapper
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class EntityWrapper extends AbstractWrapper
@@ -32,7 +29,7 @@ class EntityWrapper extends AbstractWrapper
     private $initialized = false;
 
     /**
-     * Wrapp entity
+     * Wrap entity
      *
      * @param object $entity
      * @param \Doctrine\ORM\EntityManager $em
@@ -68,7 +65,7 @@ class EntityWrapper extends AbstractWrapper
      */
     public function hasValidIdentifier()
     {
-        return (bool)$this->getIdentifier();
+        return (null !== $this->getIdentifier());
     }
 
     /**
@@ -84,7 +81,7 @@ class EntityWrapper extends AbstractWrapper
      */
     public function getIdentifier($single = true)
     {
-        if (!$this->identifier) {
+        if (null === $this->identifier) {
             if ($this->object instanceof Proxy) {
                 $uow = $this->om->getUnitOfWork();
                 if ($uow->isInIdentityMap($this->object)) {
@@ -93,12 +90,12 @@ class EntityWrapper extends AbstractWrapper
                     $this->initialize();
                 }
             }
-            if (!$this->identifier) {
+            if (null === $this->identifier) {
                 $this->identifier = array();
                 $incomplete = false;
                 foreach ($this->meta->identifier as $name) {
                     $this->identifier[$name] = $this->getPropertyValue($name);
-                    if (!$this->identifier[$name]) {
+                    if (null === $this->identifier[$name]) {
                         $incomplete = true;
                     }
                 }

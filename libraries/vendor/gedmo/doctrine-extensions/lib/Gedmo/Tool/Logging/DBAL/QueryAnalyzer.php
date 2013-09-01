@@ -8,9 +8,6 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 
 /**
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Tool.Logging.DBAL
- * @subpackage QueryAnalyzer
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class QueryAnalyzer implements SQLLogger
@@ -182,7 +179,7 @@ class QueryAnalyzer implements SQLLogger
      * @param string $sql
      * @param array $params
      * @param array $types
-     * @return sql
+     * @return string sql
      */
     private function generateSql($sql, $params, $types)
     {

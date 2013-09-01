@@ -3,6 +3,10 @@
 This is base package how to integrate Doctrine to Concrete5. I made this because there is lots of great
 features in Doctrine what I want to use with Concrete5 Package development.
 
+# Updates 1.9.2013
+Added newest versions of Doctrine 2.3.4. Changed the Database config file for more secure way to connect database.
+
+
 # Updates 17.11.2012
 
 I added Gedmo(https://github.com/l3pp4rd/DoctrineExtensions) extension for doctrine. Now 

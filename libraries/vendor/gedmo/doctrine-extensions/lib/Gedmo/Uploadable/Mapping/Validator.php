@@ -13,13 +13,10 @@ use Doctrine\ORM\Mapping\ClassMetadata;
  *
  * @author Gustavo Falco <comfortablynumb84@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Uploadable.Mapping
- * @subpackage Validator
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 
-class Validator 
+class Validator
 {
     const UPLOADABLE_FILE_MIME_TYPE = 'UploadableFileMimeType';
     const UPLOADABLE_FILE_PATH = 'UploadableFilePath';
@@ -63,6 +60,14 @@ class Validator
         'decimal'
     );
 
+    /**
+     * Whether to validate if the directory of the file exists and is writable, useful to disable it when using
+     * stream wrappers which don't support is_dir (like Gaufrette)
+     *
+     * @var bool
+     */
+    public static $validateWritableDirectory = true;
+
 
     public static function validateFileMimeTypeField(ClassMetadataInfo $meta, $field)
     {
@@ -81,6 +86,10 @@ class Validator
 
     public static function validateField($meta, $field, $uploadableField, $validFieldTypes)
     {
+        if ($meta->isMappedSuperclass) {
+            return;
+        }
+
         $fieldMapping = $meta->getFieldMapping($field);
 
         if (!in_array($fieldMapping['type'], $validFieldTypes)) {
@@ -100,8 +109,18 @@ class Validator
             throw new UploadableInvalidPathException('Path must be a string containing the path to a valid directory.');
         }
 
-        if (!is_dir($path) || !is_writable($path)) {
-            throw new UploadableCantWriteException(sprintf('Directory "%s" does not exist or is not writable',
+        if (!self::$validateWritableDirectory) {
+            return;
+        }
+
+        if (!is_dir($path) && !@mkdir($path, 0777, true)) {
+            throw new UploadableInvalidPathException(sprintf('Unable to create "%s" directory.',
+                $path
+            ));
+        }
+
+        if (!is_writable($path)) {
+            throw new UploadableCantWriteException(sprintf('Directory "%s" does is not writable.',
                 $path
             ));
         }

@@ -14,9 +14,6 @@ use Gedmo\Mapping\Driver,
  *
  * @author Miha Vrhovnik <miha.vrhovnik@gmail.com>
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Common.Mapping
- * @subpackage FileDriver
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 abstract class Xml extends File
@@ -35,7 +32,7 @@ abstract class Xml extends File
      * As we are supporting namespaces the only way to get to the attributes under a node is to use attributes function on it
      *
      * @param SimpleXMLElement $node
-     * @param  $attributeName
+     * @param string $attributeName
      * @return string
      */
     protected function _getAttribute(SimpleXmlElement $node, $attributeName)
@@ -46,11 +43,24 @@ abstract class Xml extends File
     }
 
     /**
+     * Get boolean attribute value.
+     * As we are supporting namespaces the only way to get to the attributes under a node is to use attributes function on it
+     *
+     * @param SimpleXMLElement $node
+     * @param string $attributeName
+     * @return boolean
+     */
+    protected function _getBooleanAttribute(SimpleXmlElement $node, $attributeName)
+    {
+        return 'true' === strtolower($this->_getAttribute($node, $attributeName));
+    }
+
+    /**
      * does attribute exist under a specific node
      * As we are supporting namespaces the only way to get to the attributes under a node is to use attributes function on it
      *
      * @param SimpleXMLElement $node
-     * @param  $attributeName
+     * @param string $attributeName
      * @return string
      */
     protected function _isAttributeSet(SimpleXmlElement $node, $attributeName)

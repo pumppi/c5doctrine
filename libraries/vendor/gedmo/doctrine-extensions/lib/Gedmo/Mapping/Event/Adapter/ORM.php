@@ -6,15 +6,13 @@ use Gedmo\Mapping\Event\AdapterInterface;
 use Gedmo\Exception\RuntimeException;
 use Doctrine\Common\EventArgs;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 
 /**
  * Doctrine event adapter for ORM specific
  * event arguments
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Mapping.Event.Adapter
- * @subpackage ORM
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class ORM implements AdapterInterface
@@ -51,6 +49,14 @@ class ORM implements AdapterInterface
     public function getManagerName()
     {
         return 'ORM';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRootObjectClass($meta)
+    {
+        return $meta->rootEntityName;
     }
 
     /**
@@ -148,5 +154,17 @@ class ORM implements AdapterInterface
     public function clearObjectChangeSet($uow, $oid)
     {
         $uow->clearEntityChangeSet($oid);
+    }
+
+    /**
+     * Creates a ORM specific LifecycleEventArgs.
+     *
+     * @param $document
+     * @param \Doctrine\ODM\MongoDB\DocumentManager $documentManager
+     * @return \Doctrine\ODM\MongoDB\Event\LifecycleEventArgs
+     */
+    public function createLifecycleEventArgsInstance($document, $documentManager)
+    {
+        return new LifecycleEventArgs($document, $documentManager);
     }
 }

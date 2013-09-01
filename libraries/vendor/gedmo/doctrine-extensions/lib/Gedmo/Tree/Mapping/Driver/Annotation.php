@@ -2,7 +2,7 @@
 
 namespace Gedmo\Tree\Mapping\Driver;
 
-use Gedmo\Mapping\Driver\AnnotationDriverInterface,
+use Gedmo\Mapping\Driver\AbstractAnnotationDriver,
     Gedmo\Exception\InvalidMappingException,
     Gedmo\Tree\Mapping\Validator;
 
@@ -13,12 +13,10 @@ use Gedmo\Mapping\Driver\AnnotationDriverInterface,
  * extension.
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Tree.Mapping.Driver
- * @subpackage Annotation
- * @link http://www.gediminasm.org
+ * @author <rocco@roccosportal.com>
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
-class Annotation implements AnnotationDriverInterface
+class Annotation extends AbstractAnnotationDriver
 {
     /**
      * Annotation to define the tree type
@@ -66,6 +64,11 @@ class Annotation implements AnnotationDriverInterface
     const PATH_SOURCE = 'Gedmo\\Mapping\\Annotation\\TreePathSource';
 
     /**
+     * Annotation to specify path hash class
+     */
+    const PATH_HASH = 'Gedmo\\Mapping\\Annotation\\TreePathHash';
+
+    /**
      * Annotation to mark the field to be used to hold the lock time
      */
     const LOCK_TIME = 'Gedmo\\Mapping\\Annotation\\TreeLockTime';
@@ -75,46 +78,19 @@ class Annotation implements AnnotationDriverInterface
      *
      * @var array
      */
-    private $strategies = array(
+    protected $strategies = array(
         'nested',
         'closure',
         'materializedPath'
     );
 
     /**
-     * Annotation reader instance
-     *
-     * @var object
-     */
-    private $reader;
-
-    /**
-     * original driver if it is available
-     */
-    protected $_originalDriver = null;
-
-    /**
-     * {@inheritDoc}
-     */
-    public function setAnnotationReader($reader)
-    {
-        $this->reader = $reader;
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function readExtendedMetadata($meta, array &$config)
     {
-        $class = $meta->getReflectionClass();
         $validator = new Validator();
-        
-        if (!$class) {
-            // based on recent doctrine 2.3.0-DEV maybe will be fixed in some way
-            // this happens when running annotation driver in combination with
-            // static reflection services. This is not the nicest fix
-            $class = new \ReflectionClass($meta->name);
-        }
+        $class = $this->getMetaReflectionClass($meta);
         // class annotations
         if ($annot = $this->reader->getClassAnnotation($class, self::TREE)) {
             if (!in_array($annot->type, $this->strategies)) {
@@ -210,6 +186,9 @@ class Annotation implements AnnotationDriverInterface
                 }
                 $config['path'] = $field;
                 $config['path_separator'] = $pathAnnotation->separator;
+                $config['path_append_id'] = $pathAnnotation->appendId;
+                $config['path_starts_with_separator'] = $pathAnnotation->startsWithSeparator;
+                $config['path_ends_with_separator'] = $pathAnnotation->endsWithSeparator;
             }
             // path source
             if ($this->reader->getPropertyAnnotation($property, self::PATH_SOURCE)) {
@@ -221,6 +200,19 @@ class Annotation implements AnnotationDriverInterface
                     throw new InvalidMappingException("Tree PathSource field - [{$field}] type is not valid. It can be any of the integer variants, double, float or string in class - {$meta->name}");
                 }
                 $config['path_source'] = $field;
+            }
+
+             // path hash
+            if ($this->reader->getPropertyAnnotation($property, self::PATH_HASH)) {
+                $field = $property->getName();
+                if (!$meta->hasField($field)) {
+                    throw new InvalidMappingException("Unable to find 'path_hash' - [{$field}] as mapped property in entity - {$meta->name}");
+                }
+                if (!$validator->isValidFieldForPathHash($meta, $field)) {
+                    throw new InvalidMappingException("Tree PathHash field - [{$field}] type is not valid. It can be any of the integer variants, double, float or string in class - {$meta->name}");
+                }
+                $config['path_hash'] = $field;
+
             }
             // lock time
 
@@ -251,16 +243,5 @@ class Annotation implements AnnotationDriverInterface
                 throw new InvalidMappingException("Cannot find Tree type for class: {$meta->name}");
             }
         }
-    }
-
-    /**
-     * Passes in the mapping read by original driver
-     *
-     * @param $driver
-     * @return void
-     */
-    public function setOriginalDriver($driver)
-    {
-        $this->_originalDriver = $driver;
     }
 }

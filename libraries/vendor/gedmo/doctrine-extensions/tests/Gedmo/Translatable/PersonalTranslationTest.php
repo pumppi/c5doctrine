@@ -14,7 +14,6 @@ use Translatable\Fixture\Personal\PersonalArticleTranslation;
  * These are tests for translatable behavior
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Translatable
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -125,6 +124,47 @@ class PersonalTranslationTest extends BaseTestCaseORM
         $trans = $this->em->createQuery('SELECT t FROM '.self::TRANSLATION.' t')->getArrayResult();
         $this->assertCount(1, $trans);
         $this->assertEquals('override', $trans[0]['content']);
+    }
+
+    /**
+     * Covers issue #438
+     * @test
+     */
+    function shouldPersistDefaultLocaleValue()
+    {
+        $this->translatableListener->setTranslatableLocale('de');
+        $article = new Article;
+        $article->setTitle('de');
+
+        $deTranslation = new PersonalArticleTranslation;
+        $deTranslation
+            ->setField('title')
+            ->setContent('de')
+            ->setObject($article)
+            ->setLocale('de')
+        ;
+        $this->em->persist($deTranslation);
+
+        $enTranslation = new PersonalArticleTranslation;
+        $enTranslation
+            ->setField('title')
+            ->setContent('en')
+            ->setObject($article)
+            ->setLocale('en')
+        ;
+        $this->em->persist($enTranslation);
+
+        $this->em->persist($article);
+        $this->em->flush();
+
+        $this->translatableListener->setTranslatableLocale('en');
+        $articles = $this->em->createQuery('SELECT t FROM '.self::ARTICLE.' t')->getArrayResult();
+        $this->assertEquals('en', $articles[0]['title']);
+        $trans = $this->em->createQuery('SELECT t FROM '.self::TRANSLATION.' t')->getArrayResult();
+        $this->assertCount(2, $trans);
+        foreach ($trans as $item){
+            $this->assertEquals($item['locale'], $item['content']);
+        }
     }
 
     /**

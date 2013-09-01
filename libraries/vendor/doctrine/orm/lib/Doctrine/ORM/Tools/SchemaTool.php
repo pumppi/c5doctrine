@@ -385,6 +385,16 @@ class SchemaTool
         }
 
         if (isset($mapping['options'])) {
+            $knownOptions = array('comment', 'unsigned', 'fixed', 'default');
+
+            foreach ($knownOptions as $knownOption) {
+                if ( isset($mapping['options'][$knownOption])) {
+                    $options[$knownOption] = $mapping['options'][$knownOption];
+
+                    unset($mapping['options'][$knownOption]);
+                }
+            }
+
             $options['customSchemaOptions'] = $mapping['options'];
         }
 
@@ -546,6 +556,11 @@ class SchemaTool
                 if (isset($joinColumn['nullable'])) {
                     $columnOptions['notnull'] = !$joinColumn['nullable'];
                 }
+
+                if (isset($fieldMapping['options'])) {
+                    $columnOptions['options'] = $fieldMapping['options'];
+                }
+
                 if ($fieldMapping['type'] == "string" && isset($fieldMapping['length'])) {
                     $columnOptions['length'] = $fieldMapping['length'];
                 } else if ($fieldMapping['type'] == "decimal") {

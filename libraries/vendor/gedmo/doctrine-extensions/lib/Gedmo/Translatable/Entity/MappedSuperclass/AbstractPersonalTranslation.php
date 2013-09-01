@@ -41,7 +41,7 @@ abstract class AbstractPersonalTranslation
     protected $object;
 
     /**
-     * @var text $content
+     * @var string $content
      *
      * @ORM\Column(type="text", nullable=true)
      */
@@ -61,7 +61,7 @@ abstract class AbstractPersonalTranslation
      * Set locale
      *
      * @param string $locale
-     * @return AbstractTranslation
+     * @return AbstractPersonalTranslation
      */
     public function setLocale($locale)
     {
@@ -83,7 +83,7 @@ abstract class AbstractPersonalTranslation
      * Set field
      *
      * @param string $field
-     * @return AbstractTranslation
+     * @return AbstractPersonalTranslation
      */
     public function setField($field)
     {
@@ -105,7 +105,7 @@ abstract class AbstractPersonalTranslation
      * Set object related
      *
      * @param string $object
-     * @return AbstractTranslation
+     * @return AbstractPersonalTranslation
      */
     public function setObject($object)
     {
@@ -127,7 +127,7 @@ abstract class AbstractPersonalTranslation
      * Set content
      *
      * @param string $content
-     * @return AbstractTranslation
+     * @return AbstractPersonalTranslation
      */
     public function setContent($content)
     {

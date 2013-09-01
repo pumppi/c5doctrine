@@ -11,7 +11,6 @@ use Timestampable\Fixture\Document\Article,
  * These are tests for Timestampable behavior ODM implementation
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Timestampable
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -36,7 +35,9 @@ class TimestampableDocumentTest extends BaseTestCaseMongoODM
         $article = $repo->findOneByTitle('Timestampable Article');
 
         $date = new \DateTime();
-        $this->assertEquals(time(), (string)$article->getCreated());
+        $now = time();
+        $created = intval((string)$article->getCreated());
+        $this->assertTrue($created > $now - 5 && $created < $now + 5); // 5 seconds interval if lag
         $this->assertEquals(
             $date->format('Y-m-d H:i'),
             $article->getUpdated()->format('Y-m-d H:i')
@@ -99,6 +100,23 @@ class TimestampableDocumentTest extends BaseTestCaseMongoODM
             '2000-01-01 12:00:00',
             $sport->getPublished()->format('Y-m-d H:i:s')
         );
+    }
+
+    /**
+     * @test
+     */
+    function shouldHandleOnChangeWithBooleanValue()
+    {
+        $repo = $this->dm->getRepository(self::ARTICLE);
+        $article = $repo->findOneByTitle('Timestampable Article');
+
+        $this->assertNull($article->getReady());
+
+        $article->setIsReady(true);
+        $this->dm->persist($article);
+        $this->dm->flush();
+
+        $this->assertNotNull($article->getReady());
     }
 
     private function populate()

@@ -12,6 +12,10 @@ class DoctrineC5Adapter {
 	private static $initialized = false;
 	private static $applicationMode = "development";
 	private static $namespaceArray = array();
+	private static $DB_PARAMETER = array();
+
+
+
 
 	private static function initialize() {
 		if (self::$initialized)
@@ -23,14 +27,21 @@ class DoctrineC5Adapter {
 				__DIR__ . "/vendor/doctrine/orm/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php");
 		AnnotationRegistry::registerAutoloadNamespace(
 				'Symfony\\Component\\Validator', __DIR__ . '/vendor/symfony/validator/');
-//		AnnotationRegistry::registerAutoloadNamespace(
-//				'Gedmo', __DIR__ . '/vendor/gedmo/doctrine-extensions/lib/');
 		
 		
+		
+			$DB_PARAMETER['database_driver'] = 'pdo_mysql';
+			$DB_PARAMETER['database_name'] = 'doctrine';
+			$DB_PARAMETER['database_user'] = 'root';
+			$DB_PARAMETER['database_password'] = 'root';
+			$DB_PARAMETER['database_host'] = 'localhost';
+		
+		
+
+		self::$DB_PARAMETER = $DB_PARAMETER;	 
+
 
 		$em = self::setupDoctrine();
-
-
 		self::$entityManager = $em;
 		self::$initialized = true;
 	}
@@ -80,9 +91,9 @@ class DoctrineC5Adapter {
 		 
 		// general ORM configurationI
 		$config = new Doctrine\ORM\Configuration();
-		$config->setProxyDir(sys_get_temp_dir());
+		$config->setProxyDir(__DIR__ . "/proxy");
 		$config->setProxyNamespace('Proxy');
-		$config->setAutoGenerateProxyClasses(false); // this can be based on production config.
+		$config->setAutoGenerateProxyClasses(true); // this can be based on production config.
 		$config->setMetadataDriverImpl($driverChain);
 		$config->setMetadataCacheImpl($cache);
 		$config->setQueryCacheImpl($cache);
@@ -96,16 +107,14 @@ class DoctrineC5Adapter {
 		$timestampableListener->setAnnotationReader($cachedAnnotationReader);
 		$evm->addEventSubscriber($timestampableListener);
 
+		$parmas = self::$DB_PARAMETER;
 	
-		
-		$ini_array = parse_ini_file("doctrine.ini", true);
-		$parameters = $ini_array['parameters'];
 		$connectionOptions = array(
-			'driver' => $parameters['database_driver'],
-			'dbname' => $parameters['database_name'],
-			'user' => $parameters['database_user'],
-			'password' => $parameters['database_password'],
-			'host' => $parameters['database_host']);
+			'driver' => $parmas['database_driver'],
+			'dbname' => $parmas['database_name'],
+			'user' => $parmas['database_user'],
+			'password' => $parmas['database_password'],
+			'host' => $parmas['database_host']);
 
 		return EntityManager::create($connectionOptions, $config, $evm);
 	}

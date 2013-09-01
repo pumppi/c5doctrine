@@ -26,7 +26,7 @@ abstract class AbstractLogEntry
     protected $action;
 
     /**
-     * @var datetime $loggedAt
+     * @var \DateTime $loggedAt
      *
      * @MongoODM\Index
      * @MongoODM\Date
@@ -56,7 +56,7 @@ abstract class AbstractLogEntry
     protected $version;
 
     /**
-     * @var text $data
+     * @var string $data
      *
      * @MongoODM\Hash(nullable=true)
      */
@@ -69,6 +69,16 @@ abstract class AbstractLogEntry
      * @MongoODM\String(nullable=true)
      */
     protected $username;
+
+    /**
+     * Get id
+     *
+     * @return integer
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
 
     /**
      * Get action
@@ -153,7 +163,7 @@ abstract class AbstractLogEntry
     /**
      * Get loggedAt
      *
-     * @return datetime
+     * @return \DateTime
      */
     public function getLoggedAt()
     {
@@ -161,9 +171,7 @@ abstract class AbstractLogEntry
     }
 
     /**
-     * Set loggedAt
-     *
-     * @param string $loggedAt
+     * Set loggedAt to "now"
      */
     public function setLoggedAt()
     {

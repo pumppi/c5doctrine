@@ -37,7 +37,7 @@ abstract class AbstractLogEntry
     /**
      * @var string $objectId
      *
-     * @ORM\Column(name="object_id", length=32, nullable=true)
+     * @ORM\Column(name="object_id", length=64, nullable=true)
      */
     protected $objectId;
 
@@ -56,18 +56,28 @@ abstract class AbstractLogEntry
     protected $version;
 
     /**
-     * @var text $data
+     * @var string $data
      *
      * @ORM\Column(type="array", nullable=true)
      */
     protected $data;
 
     /**
-     * @var text $data
+     * @var string $data
      *
      * @ORM\Column(length=255, nullable=true)
      */
     protected $username;
+
+    /**
+     * Get id
+     *
+     * @return integer
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
 
     /**
      * Get action
@@ -152,7 +162,7 @@ abstract class AbstractLogEntry
     /**
      * Get loggedAt
      *
-     * @return datetime
+     * @return \DateTime
      */
     public function getLoggedAt()
     {
@@ -160,9 +170,7 @@ abstract class AbstractLogEntry
     }
 
     /**
-     * Set loggedAt
-     *
-     * @param string $loggedAt
+     * Set loggedAt to "now"
      */
     public function setLoggedAt()
     {

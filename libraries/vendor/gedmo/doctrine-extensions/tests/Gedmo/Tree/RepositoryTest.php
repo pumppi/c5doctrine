@@ -12,7 +12,6 @@ use Doctrine\Common\Util\Debug,
  * These are tests for Tree behavior
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Tree
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -301,11 +300,10 @@ class RepositoryTest extends BaseTestCaseORM
         $this->assertEquals('node [8] left is less than parent`s [4] left value', $invalidLeft);
 
         // test recover functionality
-        // @todo implement
-        //$repo->recover();
-        //$this->em->clear(); // must clear cached entities
+        $repo->recover();
+        $this->em->flush();
 
-        //$this->assertTrue($repo->verify());
+        $this->assertTrue($repo->verify());
     }
 
     public function testMoveRootNode()

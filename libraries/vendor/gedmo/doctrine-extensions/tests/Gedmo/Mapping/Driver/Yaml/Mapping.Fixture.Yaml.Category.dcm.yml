@@ -25,12 +25,19 @@ Mapping\Fixture\Yaml\Category:
       type: string
       length: 64
       gedmo:
-        - translatable
         slug:
           separator: "_"
           style: camel
           fields:
             - title
+          handlers:
+            "Gedmo\Sluggable\Handler\RelativeSlugHandler":
+              relationField: parent
+              relationSlugField: slug
+              separator: /
+            "Gedmo\Sluggable\Handler\TreeSlugHandler":
+              parentRelationField: parent
+              separator: /
     changed:
       type: date
       gedmo:

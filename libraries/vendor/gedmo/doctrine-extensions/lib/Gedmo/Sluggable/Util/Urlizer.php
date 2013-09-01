@@ -13,10 +13,7 @@ namespace Gedmo\Sluggable\Util;
  * Uses 3rd party libraries and functions:
  *         http://sourceforge.net/projects/phputf8
  *
- * @package     Gedmo.Sluggable.Util
- * @subpackage  Urlizer
  * @license     http://www.opensource.org/licenses/lgpl-license.php LGPL
- * @link        www.doctrine-project.org
  * @since       1.0
  * @version     $Revision: 3189 $
  * @author      Konsta Vesterinen <kvesteri@cc.hut.fi>
@@ -276,7 +273,7 @@ class Urlizer
         if (preg_match('/[\x80-\xff]/', $text) && self::validUtf8($text)) {
             $text = self::utf8ToAscii($text);
         }
-        return $text;
+        return  self::postProcessText($text, $separator);
     }
 
     /**

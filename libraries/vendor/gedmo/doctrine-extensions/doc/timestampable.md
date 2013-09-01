@@ -2,11 +2,11 @@
 
 **Timestampable** behavior will automate the update of date fields
 on your Entities or Documents. It works through annotations and can update 
-fields on creation, update or even on specific property value change.
+fields on creation, update, property subset update, or even on specific property value change.
 
 Features:
 
-- Automatic predifined date field update on creation, update and even on record property changes
+- Automatic predefined date field update on creation, update, property subset update, and even on record property changes
 - ORM and ODM support using same listener
 - Specific annotations for properties, and no interface required
 - Can react to specific property or relation changes to specific value 
@@ -15,6 +15,10 @@ Features:
 
 [blog_reference]: http://gediminasm.org/article/timestampable-behavior-extension-for-doctrine-2 "Timestampable extension for Doctrine 2 helps automate update of dates"
 [blog_test]: http://gediminasm.org/test "Test extensions on this blog"
+
+Update **2012-06-26**
+
+- Allow multiple values for on="change"
 
 Update **2012-03-10**
 
@@ -69,9 +73,8 @@ Available configuration options:
 
 - **on** - is main option and can be **create, update, change** this tells when it 
 should be updated
-- **field** - only valid if **on="change"** is specified, tracks property for changes
-- **value** - only valid if **on="change"** is specified, if tracked field has this **value** 
-then it updates timestamp
+- **field** - only valid if **on="change"** is specified, tracks property or a list of properties for changes
+- **value** - only valid if **on="change"** is specified and the tracked field is a single field (not an array), if the tracked field has this **value**
 
 **Note:** that Timestampable interface is not necessary, except in cases there
 you need to identify entity as being Timestampable. The metadata is loaded only once then
@@ -98,6 +101,11 @@ class Article
     private $title;
 
     /**
+     * @ORM\Column(name="body", type="string")
+     */
+    private $body;
+
+    /**
      * @var datetime $created
      *
      * @Gedmo\Timestampable(on="create")
@@ -112,6 +120,14 @@ class Article
      * @ORM\Column(type="datetime")
      */
     private $updated;
+
+    /**
+     * @var datetime $contentChanged
+     *
+     * @ORM\Column(name="content_changed", type="datetime", nullable=true)
+     * @Gedmo\Timestampable(on="change", field={"title", "body"})
+     */
+    private $contentChanged;
 
     public function getId()
     {
@@ -128,6 +144,16 @@ class Article
         return $this->title;
     }
 
+    public function setBody($body)
+    {
+        $this->body = $body;
+    }
+
+    public function getBody()
+    {
+        return $this->body;
+    }
+
     public function getCreated()
     {
         return $this->created;
@@ -136,6 +162,11 @@ class Article
     public function getUpdated()
     {
         return $this->updated;
+    }
+
+    public function getContentChanged()
+    {
+        return $this->contentChanged;
     }
 }
 ```
@@ -165,6 +196,11 @@ class Article
     private $title;
 
     /**
+     * @ODM\String
+     */
+    private $body;
+
+    /**
      * @var date $created
      *
      * @ODM\Date
@@ -179,6 +215,14 @@ class Article
      * @Gedmo\Timestampable
      */
     private $updated;
+
+    /**
+     * @var datetime $contentChanged
+     *
+     * @ODM\Date
+     * @Gedmo\Timestampable(on="change", field={"title", "body"})
+     */
+    private $contentChanged;
 
     public function getId()
     {
@@ -195,6 +239,16 @@ class Article
         return $this->title;
     }
 
+    public function setBody($body)
+    {
+        $this->body = $body;
+    }
+
+    public function getBody()
+    {
+        return $this->body;
+    }
+
     public function getCreated()
     {
         return $this->created;
@@ -203,6 +257,11 @@ class Article
     public function getUpdated()
     {
         return $this->updated;
+    }
+
+    public function getContentChanged()
+    {
+        return $this->contentChanged;
     }
 }
 ```
@@ -370,6 +429,9 @@ class Article
      *
      * @ORM\Column(type="datetime", nullable=true)
      * @Gedmo\Timestampable(on="change", field="type.title", value="Published")
+     *
+     * or for example
+     * @Gedmo\Timestambable(on="change", field="type.title", value={"Published", "Closed"})
      */
     private $published;
 

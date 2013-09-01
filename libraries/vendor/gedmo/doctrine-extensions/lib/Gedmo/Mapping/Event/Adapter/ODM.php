@@ -6,15 +6,13 @@ use Gedmo\Mapping\Event\AdapterInterface;
 use Gedmo\Exception\RuntimeException;
 use Doctrine\Common\EventArgs;
 use Doctrine\ODM\MongoDB\DocumentManager;
+use Doctrine\ODM\MongoDB\Event\LifecycleEventArgs;
 
 /**
  * Doctrine event adapter for ODM specific
  * event arguments
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Mapping.Event.Adapter
- * @subpackage ODM
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class ODM implements AdapterInterface
@@ -51,6 +49,14 @@ class ODM implements AdapterInterface
     public function getManagerName()
     {
         return 'ODM';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRootObjectClass($meta)
+    {
+        return $meta->rootDocumentName;
     }
 
     /**
@@ -148,5 +154,17 @@ class ODM implements AdapterInterface
     public function clearObjectChangeSet($uow, $oid)
     {
         $uow->clearDocumentChangeSet($oid);
+    }
+
+    /**
+     * Creates a ODM specific LifecycleEventArgs.
+     *
+     * @param $document
+     * @param \Doctrine\ODM\MongoDB\DocumentManager $documentManager
+     * @return \Doctrine\ODM\MongoDB\Event\LifecycleEventArgs
+     */
+    public function createLifecycleEventArgsInstance($document, $documentManager)
+    {
+        return new LifecycleEventArgs($document, $documentManager);
     }
 }

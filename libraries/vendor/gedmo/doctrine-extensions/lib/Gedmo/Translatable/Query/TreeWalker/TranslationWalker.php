@@ -23,9 +23,6 @@ use Doctrine\ORM\Query\AST\Join;
  * of the fields.
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Translatable.Query.TreeWalker
- * @subpackage TranslationWalker
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class TranslationWalker extends SqlWalker
@@ -61,14 +58,14 @@ class TranslationWalker extends SqlWalker
     /**
      * DBAL database platform
      *
-     * @var Doctrine\DBAL\Platforms\AbstractPlatform
+     * @var \Doctrine\DBAL\Platforms\AbstractPlatform
      */
     private $platform;
 
     /**
      * DBAL database connection
      *
-     * @var Doctrine\DBAL\Connection
+     * @var \Doctrine\DBAL\Connection
      */
     private $conn;
 
@@ -214,12 +211,21 @@ class TranslationWalker extends SqlWalker
         $result = parent::walkSimpleSelectClause($simpleSelectClause);
         return $this->replace($this->replacements, $result);
     }
+    
+    /**
+     * {@inheritDoc}
+     */
+    public function walkGroupByClause($groupByClause)
+    {
+        $result = parent::walkGroupByClause($groupByClause);
+        return $this->replace($this->replacements, $result);
+    }
 
     /**
      * Walks from clause, and creates translation joins
      * for the translated components
      *
-     * @param Doctrine\ORM\Query\AST\FromClause $from
+     * @param \Doctrine\ORM\Query\AST\FromClause $from
      * @return string
      */
     private function joinTranslations($from)
@@ -269,7 +275,7 @@ class TranslationWalker extends SqlWalker
             $locale = $this->listener->getListenerLocale();
         }
         $defaultLocale = $this->listener->getDefaultLocale();
-        if ($locale === $defaultLocale) {
+        if ($locale === $defaultLocale  && !$this->listener->getPersistDefaultLocaleTranslation()) {
             // Skip preparation as there's no need to translate anything
             return;
         }
@@ -285,8 +291,7 @@ class TranslationWalker extends SqlWalker
             $transMeta = $em->getClassMetadata($transClass);
             $transTable = $transMeta->getQuotedTableName($this->platform);
             foreach ($config['fields'] as $field) {
-                $compTableName = $meta->getQuotedTableName($this->platform);
-                $compTblAlias = $this->getSQLTableAlias($compTableName, $dqlAlias);
+                $compTblAlias = $this->walkIdentificationVariable($dqlAlias, $field);
                 $tblAlias = $this->getSQLTableAlias('trans'.$compTblAlias.$field);
                 $sql = " {$joinStrategy} JOIN ".$transTable.' '.$tblAlias;
                 $sql .= ' ON '.$tblAlias.'.'.$transMeta->getQuotedColumnName('locale', $this->platform)
@@ -405,8 +410,8 @@ class TranslationWalker extends SqlWalker
     private function replace(array $repl, $str)
     {
         foreach ($repl as $target => $result) {
-            $str = preg_replace_callback('/(\s|\()('.$target.')(\s|\))/smi', function($m) use ($result) {
-                return $m[1].$result.$m[3];
+            $str = preg_replace_callback('/(\s|\()('.$target.')(,?)(\s|\))/smi', function($m) use ($result) {
+                return $m[1].$result.$m[3].$m[4];
             }, $str);
         }
         return $str;

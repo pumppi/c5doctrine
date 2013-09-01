@@ -10,9 +10,6 @@ use Gedmo\Tool\Wrapper\AbstractWrapper;
  * for Translatable behavior
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo\Translatable\Mapping\Event
- * @subpackage TranslatableAdapter
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 interface TranslatableAdapter extends AdapterInterface
@@ -47,7 +44,7 @@ interface TranslatableAdapter extends AdapterInterface
     /**
      * Search for existing translation record
      *
-     * AbstractWrapper $wrapped
+     * @param AbstractWrapper $wrapped
      * @param string $locale
      * @param string $field
      * @param string $translationClass
@@ -59,7 +56,7 @@ interface TranslatableAdapter extends AdapterInterface
     /**
      * Removes all associated translations for given object
      *
-     * AbstractWrapper $wrapped
+     * @param AbstractWrapper $wrapped
      * @param string $transClass
      * @param string $objectClass
      * @return void

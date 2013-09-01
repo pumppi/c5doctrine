@@ -5,8 +5,6 @@
 * NOTE: should be included with require_once
 *
 * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
-* @package Gedmo.Mapping.Annotation
-* @link http://www.gediminasm.org
 * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
 */
 
@@ -14,10 +12,13 @@ include __DIR__.'/Language.php';
 include __DIR__.'/Locale.php';
 include __DIR__.'/Loggable.php';
 include __DIR__.'/Slug.php';
+include __DIR__.'/SlugHandler.php';
+include __DIR__.'/SlugHandlerOption.php';
 include __DIR__.'/SoftDeleteable.php';
 include __DIR__.'/SortableGroup.php';
 include __DIR__.'/SortablePosition.php';
 include __DIR__.'/Timestampable.php';
+include __DIR__.'/Blameable.php';
 include __DIR__.'/Translatable.php';
 include __DIR__.'/TranslationEntity.php';
 include __DIR__.'/Tree.php';

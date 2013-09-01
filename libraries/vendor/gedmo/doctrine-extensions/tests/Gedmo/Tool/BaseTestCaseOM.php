@@ -24,6 +24,7 @@ use Gedmo\Sluggable\SluggableListener;
 use Gedmo\Tree\TreeListener;
 use Gedmo\Timestampable\TimestampableListener;
 use Gedmo\Loggable\LoggableListener;
+use Doctrine\ORM\Repository\DefaultRepositoryFactory;
 
 /**
  * Base test case contains common mock objects
@@ -31,8 +32,6 @@ use Gedmo\Loggable\LoggableListener;
  * test cases
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo
- * @subpackage BaseTestCase
  * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -303,6 +302,12 @@ abstract class BaseTestCaseOM extends \PHPUnit_Framework_TestCase
 
         $config
             ->expects($this->any())
+            ->method('getDefaultRepositoryClassName')
+            ->will($this->returnValue('Doctrine\\ORM\\EntityRepository'))
+        ;
+
+        $config
+            ->expects($this->any())
             ->method('getQuoteStrategy')
             ->will($this->returnValue(new DefaultQuoteStrategy()))
         ;
@@ -319,6 +324,11 @@ abstract class BaseTestCaseOM extends \PHPUnit_Framework_TestCase
         $config->expects($this->any())
             ->method('getMetadataDriverImpl')
             ->will($this->returnValue($mappingDriver));
+
+        $config
+            ->expects($this->once())
+            ->method('getRepositoryFactory')
+            ->will($this->returnValue(new DefaultRepositoryFactory));
 
         return $config;
     }

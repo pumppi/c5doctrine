@@ -8,16 +8,12 @@ use Doctrine\ODM\MongoDB\DocumentManager;
 use Doctrine\ODM\MongoDB\Mapping\ClassMetadataInfo;
 use Doctrine\ODM\MongoDB\Cursor;
 use Gedmo\Translatable\Mapping\Event\TranslatableAdapter;
-use Doctrine\ODM\MongoDB\Mapping\Types\Type;
 
 /**
  * Doctrine event adapter for ODM adapted
  * for Translatable behavior
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo\Translatable\Mapping\Event\Adapter
- * @subpackage ODM
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 final class ODM extends BaseAdapterODM implements TranslatableAdapter
@@ -174,7 +170,7 @@ final class ODM extends BaseAdapterODM implements TranslatableAdapter
         $wrapped = AbstractWrapper::wrap($object, $dm);
         $meta = $wrapped->getMetadata();
         $mapping = $meta->getFieldMapping($field);
-        $type = Type::getType($mapping['type']);
+        $type = $this->getType($mapping['type']);
         if ($value === false) {
             $value = $wrapped->getPropertyValue($field);
         }
@@ -190,9 +186,16 @@ final class ODM extends BaseAdapterODM implements TranslatableAdapter
         $wrapped = AbstractWrapper::wrap($object, $dm);
         $meta = $wrapped->getMetadata();
         $mapping = $meta->getFieldMapping($field);
-        $type = Type::getType($mapping['type']);
+        $type = $this->getType($mapping['type']);
 
         $value = $type->convertToPHPValue($value);
         $wrapped->setPropertyValue($field, $value);
+    }
+
+    private function getType($type)
+    {
+        // due to change in ODM beta 9
+        return class_exists('Doctrine\ODM\MongoDB\Types\Type') ? \Doctrine\ODM\MongoDB\Types\Type::getType($type)
+            : \Doctrine\ODM\MongoDB\Mapping\Types\Type::getType($type);
     }
 }

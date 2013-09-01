@@ -217,7 +217,8 @@ class DatabaseDriver implements MappingDriver
         }
 
         if ($ids) {
-            if (count($ids) == 1) {
+            // We need to check for the columns here, because we might have associations as id as well.
+            if (count($primaryKeyColumns) == 1) {
                 $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
             }
 
@@ -296,6 +297,10 @@ class DatabaseDriver implements MappingDriver
             $associationMapping = array();
             $associationMapping['fieldName'] = $this->getFieldNameForColumn($tableName, $localColumn, true);
             $associationMapping['targetEntity'] = $this->getClassNameForTable($foreignTable);
+
+            if (isset($metadata->fieldMappings[$associationMapping['fieldName']])) {
+                $associationMapping['fieldName'] = $associationMapping['fieldName'] . "2";
+            }
 
             if ($primaryKeyColumns && in_array($localColumn, $primaryKeyColumns)) {
                 $associationMapping['id'] = true;

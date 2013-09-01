@@ -6,9 +6,6 @@ namespace Gedmo\Timestampable\Traits;
  * Timestampable Trait, usable with PHP >= 5.4
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
- * @package Gedmo.Timestampable.Traits
- * @subpackage TimestampableDocument
- * @link http://www.gediminasm.org
  * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 trait TimestampableDocument
@@ -28,11 +25,14 @@ trait TimestampableDocument
     /**
      * Sets createdAt.
      *
-     * @param Datetime $createdAt
+     * @param  Datetime $createdAt
+     * @return $this
      */
     public function setCreatedAt(\DateTime $createdAt)
     {
         $this->createdAt = $createdAt;
+
+        return $this;
     }
 
     /**
@@ -48,11 +48,14 @@ trait TimestampableDocument
     /**
      * Sets updatedAt.
      *
-     * @param DateTime $updatedAt
+     * @param  DateTime $updatedAt
+     * @return $this
      */
     public function setUpdatedAt(\DateTime $updatedAt)
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
     }
 
     /**
